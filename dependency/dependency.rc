@@ -28,14 +28,18 @@ IDR_MENU1 MENU
 BEGIN
     POPUP "文件"
     BEGIN
-        MENUITEM "打开",                          ID_FILE_OPEN
-        MENUITEM "关闭",                          ID_FILE_CLOSE
-        MENUITEM "退出",                          ID_FILE_EXIT
+        MENUITEM "打开文件(&O)",                    ID_FILE_OPEN
+        MENUITEM "关闭文件(&C)",                    ID_FILE_CLOSE
+        MENUITEM "退出(&E)",                      ID_FILE_EXIT
     END
-    MENUITEM "视图",                          0
+    POPUP "视图"
+    BEGIN
+        MENUITEM "展开所有(&E)",                    ID_VIEW_EXPEND
+        MENUITEM "收拢所有(&C)",                    ID_VIEW_COLLAPSE
+    END
     POPUP "帮助"
     BEGIN
-        MENUITEM "关于我们",                        ID_32777
+        MENUITEM "关于我们",                        ID_HELP_ABOUT
     END
 END
 
@@ -101,14 +105,14 @@ BEGIN
     GROUPBOX        "",IDC_STATIC,7,7,115,88
 END
 
-IDD_MAINDLG DIALOGEX 0, 0, 419, 251
+IDD_MAINDLG DIALOGEX 0, 0, 587, 321
 STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 CAPTION "dependency"
 MENU IDR_MENU1
 FONT 9, "Segoe UI", 0, 0, 0x0
 BEGIN
-    CONTROL         "",IDC_TREE1,"SysTreeView32",TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | WS_BORDER | WS_HSCROLL | WS_TABSTOP,0,0,111,244
-    CONTROL         "",IDC_LIST1,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,123,0,289,244
+    CONTROL         "",IDC_TREE1,"SysTreeView32",TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | WS_BORDER | WS_HSCROLL | WS_TABSTOP,0,70,111,244
+    CONTROL         "",IDC_LIST1,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,291,70,289,244
 END
 
 
@@ -131,9 +135,9 @@ BEGIN
     IDD_MAINDLG, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 412
+        RIGHTMARGIN, 580
         TOPMARGIN, 7
-        BOTTOMMARGIN, 244
+        BOTTOMMARGIN, 314
     END
 END
 #endif    // APSTUDIO_INVOKED

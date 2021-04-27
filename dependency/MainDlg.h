@@ -69,6 +69,7 @@ protected:
 	void ClearTreeView();
 	void ExpendItem(HTREEITEM item);
 
+	void InitListView();
 	void ClearListView();
 	
 	HTREEITEM AddTreeItem(HTREEITEM hParent, HTREEITEM hPrev, LPCTSTR pszCaption);
@@ -76,9 +77,12 @@ protected:
 
 	void AddExportFunctions(const std::list<IMAGE_EXPORT_FUNCTION>& function_list);
 
-	void OnFileOpen();
-	void OnFileClose();
-	void OnExit();
+	void OnMenuFileOpen();
+	void OnMenuFileClose();
+	void OnMenuExit();
+	void OnMenuAbout();
+	void OnMenuExpendAll();
+	void OnMenuCollapseAll();
 
 private:
 
@@ -92,8 +96,7 @@ private:
 
 	LRESULT OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 	{
-		CAboutDlg dlg;
-		dlg.DoModal();
+		OnMenuAbout();
 		return 0;
 	}
 
