@@ -127,14 +127,33 @@ void CMainDlg::OnMenuAbout()
 	dlg.DoModal();
 }
 
+void ExpendAllItem(HWND tree_view, HTREEITEM item, UINT code) {
+	if (item == NULL) {
+		return;
+	}
+	TreeView_Expand(tree_view, item, code);
+	auto child_item = TreeView_GetChild(tree_view, item);
+	if (child_item != NULL) {
+		ExpendAllItem(tree_view, child_item, code);
+	}
+
+	while (true) {
+		item = TreeView_GetNextSibling(tree_view, item);
+		if (item == NULL) {
+			break;
+		}
+		ExpendAllItem(tree_view, item, code);
+	}
+}
+
 void CMainDlg::OnMenuExpendAll()
 {
-
+	ExpendAllItem(tree_view_, tree_root_item_, TVE_EXPAND);
 }
 
 void CMainDlg::OnMenuCollapseAll()
 {
-
+	ExpendAllItem(tree_view_, tree_root_item_, TVE_COLLAPSE);
 }
 
 LRESULT CMainDlg::OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
@@ -192,7 +211,7 @@ BOOL CMainDlg::OpenFile(const std::wstring& pe_path)
 	TREEITEM_DATA item_data = { 0 };
 	item_data.item_text = std::move(file_name);
 	tree_item_map_[tree_root_item_] = std::move(item_data);
-	ExpendItem(tree_root_item_);
+	ExpendTreeItem(tree_root_item_);
 	return TRUE;
 }
 
@@ -215,7 +234,7 @@ void CMainDlg::ClearTreeView()
 	}
 }
 
-void CMainDlg::ExpendItem(HTREEITEM item)
+void CMainDlg::ExpendTreeItem(HTREEITEM item)
 {
 	ClearListView();
 	auto itor = tree_item_map_.find(item);
@@ -283,7 +302,7 @@ LRESULT CMainDlg::OnTvnSelchangedTree1(int idCtrl, LPNMHDR pNMHDR, BOOL& bHandle
 {
 	LPNMTREEVIEW pNMTreeView = reinterpret_cast<LPNMTREEVIEW>(pNMHDR);
 	// TODO: 在此添加控件通知处理程序代码
-	ExpendItem(pNMTreeView->itemNew.hItem);
+	ExpendTreeItem(pNMTreeView->itemNew.hItem);
 	return 0;
 }
 

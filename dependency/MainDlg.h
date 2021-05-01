@@ -67,7 +67,7 @@ protected:
 
 	BOOL OpenFile(const std::wstring& pe_path);
 	void ClearTreeView();
-	void ExpendItem(HTREEITEM item);
+	void ExpendTreeItem(HTREEITEM item);
 
 	void InitListView();
 	void ClearListView();

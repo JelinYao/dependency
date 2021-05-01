@@ -94,15 +94,17 @@ IDR_MAINFRAME           ICON                    "res\\dependency.ico"
 // Dialog
 //
 
-IDD_ABOUTBOX DIALOG 0, 0, 187, 102
+IDD_ABOUTBOX DIALOGEX 0, 0, 187, 102
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About"
-FONT 9, "Segoe UI"
+FONT 9, "Segoe UI", 0, 0, 0x0
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,130,81,50,14
-    CTEXT           "dependency Application v1.0\n\n(c) Copyright 2021",IDC_STATIC,25,57,78,32
-    ICON            IDR_MAINFRAME,IDC_STATIC,55,26,18,20
+    CTEXT           "dependency Application v1.0\n\n(c) Copyright 2021",IDC_STATIC,7,66,115,29
+    ICON            IDR_MAINFRAME,IDC_STATIC,55,26,20,20
     GROUPBOX        "",IDC_STATIC,7,7,115,88
+    CONTROL         "<a>https://github.com/jelinyao</a>",IDC_SYSLINK1,
+                    "SysLink",WS_TABSTOP,20,51,102,14
 END
 
 IDD_MAINDLG DIALOGEX 0, 0, 587, 321
@@ -211,6 +213,11 @@ END
 //
 
 IDD_MAINDLG AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_ABOUTBOX AFX_DIALOG_LAYOUT
 BEGIN
     0
 END
