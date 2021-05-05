@@ -2,12 +2,12 @@
 #include <list>
 
 struct IMAGE_EXPORT_FUNCTION {
-	char* function_name;
-	DWORD thunkRVA;
-	DWORD	thunk;
-	WORD hint;
-	WORD ordinal;
-	DWORD entry_point;
+	char* function_name = NULL;
+	DWORD thunkRVA = 0;
+	DWORD	thunk = 0;
+	WORD hint = 0;
+	WORD ordinal = 0;
+	DWORD entry_point = 0;
 };
 
 inline void ReleaseImageExportFunction(IMAGE_EXPORT_FUNCTION* p) {
@@ -17,11 +17,23 @@ inline void ReleaseImageExportFunction(IMAGE_EXPORT_FUNCTION* p) {
 	}
 }
 
+inline void CopyStringByMalloc(char** dest, const char* source) {
+	if (source == NULL) {
+		return;
+	}
+	int length = strlen(source);
+	char* p = (char*)malloc(length + 1);
+	memcpy(p, source, length);
+	p[length] = '\0';
+	*dest = p;
+}
+
 struct IMAGE_IMPORT_DLL {
-	char* dll_name;
-	DWORD originalFirstThunk;
-	DWORD forwarderChain;
-	DWORD firstThunk;
+	char* dll_name = NULL;
+	DWORD originalFirstThunk = 0;
+	DWORD forwarderChain = 0;
+	DWORD firstThunk = 0;
+	std::list<IMAGE_EXPORT_FUNCTION> use_function_list;
 };
 
 inline void ReleaseImageImportDll(IMAGE_IMPORT_DLL* p) {

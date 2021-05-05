@@ -39,7 +39,6 @@ public:
 		COMMAND_ID_HANDLER(IDOK, OnOK)
 		COMMAND_ID_HANDLER(IDCANCEL, OnCancel)
 		NOTIFY_HANDLER(IDC_TREE1, TVN_SELCHANGED, OnTvnSelchangedTree1)
-		NOTIFY_HANDLER(IDC_TREE1, NM_RCLICK, OnNMRclickTree)
 	END_MSG_MAP()
 
 	// Handler prototypes (uncomment arguments if needed):
@@ -49,9 +48,10 @@ public:
 private:
 	class TREEITEM_DATA {
 	public:
-		BOOL read_flag;
+		BOOL read_flag = FALSE;
 		std::wstring item_text;
 		std::list<IMAGE_EXPORT_FUNCTION> export_function_list;
+		std::list<IMAGE_EXPORT_FUNCTION> use_function_list;
 		std::list<IMAGE_IMPORT_DLL> import_dll_list;
 	};
 
@@ -61,7 +61,8 @@ private:
 	std::wstring current_pe_dir_;
 	std::map<HTREEITEM, TREEITEM_DATA> tree_item_map_;
 
-	HWND list_view_;
+	HWND list_view_export_;
+	HWND list_view_use_;
 
 protected:
 
@@ -73,9 +74,10 @@ protected:
 	void ClearListView();
 	
 	HTREEITEM AddTreeItem(HTREEITEM hParent, HTREEITEM hPrev, LPCTSTR pszCaption);
-	void AddListViewItem(int item_index, int column_index, LPCTSTR text);
+	void AddListViewItem(HWND list_view, int item_index, int column_index, LPCTSTR text);
 
 	void AddExportFunctions(const std::list<IMAGE_EXPORT_FUNCTION>& function_list);
+	void AddUseFunctions(const std::list<IMAGE_EXPORT_FUNCTION>& function_list);
 
 	void OnMenuFileOpen();
 	void OnMenuFileClose();
@@ -121,5 +123,5 @@ private:
 	
 public:
 	LRESULT OnTvnSelchangedTree1(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL& /*bHandled*/);
-	LRESULT OnNMRclickTree(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL& /*bHandled*/);
+
 };

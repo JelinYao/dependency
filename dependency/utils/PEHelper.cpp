@@ -149,14 +149,11 @@ bool PEHelper::GetExportFunctions(std::list<IMAGE_EXPORT_FUNCTION>& function_lis
 			continue;
 		}
 		auto temp = pOrdinals[i];
-		IMAGE_EXPORT_FUNCTION function = { 0 };
+		IMAGE_EXPORT_FUNCTION function;
 		function.entry_point = pFunctions[i];
-		int length = strlen(function_name);
-		function.function_name = (char*)malloc(length + 1);
-		memcpy(function.function_name, function_name, length);
-		function.function_name[length] = '\0';
-		function.hint = i;
-		function.ordinal = image_export_dir->Base + i;
+		CopyStringByMalloc(&function.function_name, function_name);
+		function.hint = (WORD)i;
+		function.ordinal = (WORD)(image_export_dir->Base + i);
 		function_list.push_back(function);
 	}
 	return true;
@@ -196,13 +193,16 @@ bool PEHelper::GetImportDlls(std::list<IMAGE_IMPORT_DLL>& dll_list)
 		int j = 0;
 		IMAGE_THUNK_DATA32 null_thunk = { 0 };
 		// https://blog.csdn.net/zang141588761/article/details/50401203
+		std::list<IMAGE_EXPORT_FUNCTION> function_list;
 		while (true) {
 			memcpy(&null_thunk, pThunk + j, sizeof(IMAGE_THUNK_DATA32));
 			if (null_thunk.u1.AddressOfData == 0 || null_thunk.u1.Function == 0) {
 				break;
 			}
+			IMAGE_EXPORT_FUNCTION use_function;
 			if (pThunk[j].u1.AddressOfData & IMAGE_ORDINAL_FLAG32) {
 				printf(" \t [%d] \t %ld \t ∞¥–Ú∫≈µº»Î\n ", j, pThunk[j].u1.AddressOfData & 0xffff);
+				use_function.ordinal = pThunk[j].u1.AddressOfData & 0xffff;
 			}
 			else {
 				PIMAGE_IMPORT_BY_NAME pFuncName = (PIMAGE_IMPORT_BY_NAME)ImageRvaToVa(
@@ -210,17 +210,18 @@ bool PEHelper::GetImportDlls(std::list<IMAGE_IMPORT_DLL>& dll_list)
 					pThunk[j].u1.AddressOfData,
 					NULL);
 				printf(" \t [%d] \t %ld \t %s\n ", j, pFuncName->Hint, pFuncName->Name);
+				use_function.hint = pFuncName->Hint;
+				CopyStringByMalloc(&use_function.function_name, pFuncName->Name);
 			}
 			j++;
+			function_list.push_back(use_function);
 		}
-		IMAGE_IMPORT_DLL dll_info = { 0 };
-		int length = strlen(dll_name);
-		dll_info.dll_name = (char*)malloc(length + 1);
-		memcpy(dll_info.dll_name, dll_name, length);
-		dll_info.dll_name[length] = '\0';
+		IMAGE_IMPORT_DLL dll_info;
+		CopyStringByMalloc(&dll_info.dll_name, dll_name);
 		dll_info.originalFirstThunk = import_table[i].OriginalFirstThunk;
 		dll_info.forwarderChain = import_table[i].ForwarderChain;
 		dll_info.firstThunk = import_table[i].FirstThunk;
+		dll_info.use_function_list = std::move(function_list);
 		dll_list.push_back(dll_info);
 		i++;
 	}

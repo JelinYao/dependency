@@ -26,8 +26,8 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 	UIAddChildWindowContainer(m_hWnd);
 
 	tree_view_ = ::GetDlgItem(m_hWnd, IDC_TREE1);
-	list_view_ = ::GetDlgItem(m_hWnd, IDC_LIST1);
-
+	list_view_export_ = ::GetDlgItem(m_hWnd, IDC_LIST1);
+	list_view_use_ = ::GetDlgItem(m_hWnd, IDC_LIST2);
 	InitListView();
 	// OpenFile(L"C:\\Program Files (x86)\\Tencent\\WeChat\\WeChatApp.exe");
 	return TRUE;
@@ -46,7 +46,7 @@ HTREEITEM CMainDlg::AddTreeItem(HTREEITEM hParent, HTREEITEM hPrev, LPCTSTR pszC
 	return TreeView_InsertItem(tree_view_, &tree_view_struct);
 }
 
-void CMainDlg::AddListViewItem(int item_index, int column_index, LPCTSTR text)
+void CMainDlg::AddListViewItem(HWND list_view, int item_index, int column_index, LPCTSTR text)
 {
 	LVITEM list_view_item;
 	memset(&list_view_item, 0, sizeof(LVITEM));
@@ -55,7 +55,7 @@ void CMainDlg::AddListViewItem(int item_index, int column_index, LPCTSTR text)
 	list_view_item.iItem = item_index;
 	list_view_item.iSubItem = column_index;
 	list_view_item.pszText = (LPWSTR)text;
-	::SendMessage(list_view_, LVM_SETITEM, 0, (LPARAM)&list_view_item);
+	::SendMessage(list_view, LVM_SETITEM, 0, (LPARAM)&list_view_item);
 }
 
 void CMainDlg::AddExportFunctions(const std::list<IMAGE_EXPORT_FUNCTION>& function_list)
@@ -72,23 +72,56 @@ void CMainDlg::AddExportFunctions(const std::list<IMAGE_EXPORT_FUNCTION>& functi
 		item.stateMask = 0;
 		item.iImage = 0;
 		item.lParam = 0;
-		SendMessage(list_view_, LVM_INSERTITEM, 0, (LPARAM)&item);
+		SendMessage(list_view_export_, LVM_INSERTITEM, 0, (LPARAM)&item);
 
 		wchar_t buffer[16] = { 0 };
 		swprintf_s(buffer, L"%2d(0x%04x)", function.ordinal, function.ordinal);
-		AddListViewItem(count, 0, buffer);
+		AddListViewItem(list_view_export_, count, 0, buffer);
 		swprintf_s(buffer, L"%2d(0x%04x)", function.hint, function.hint);
-		AddListViewItem(count, 1, buffer);
+		AddListViewItem(list_view_export_, count, 1, buffer);
 		auto function_name = AToU(function.function_name);
-		AddListViewItem(count, 2, function_name.c_str());
-		AddListViewItem(count, 3, ToHexString(function.entry_point).c_str());
-		AddListViewItem(count, 4, ToHexString(function.thunk).c_str());
+		AddListViewItem(list_view_export_, count, 2, function_name.c_str());
+		AddListViewItem(list_view_export_, count, 3, ToHexString(function.entry_point).c_str());
+		AddListViewItem(list_view_export_, count, 4, ToHexString(function.thunk).c_str());
 		count++;
 		if (function_name.size() > max_lenth) {
 			max_lenth = function_name.size();
 		}
 	}
-	::SendMessage(list_view_, LVM_SETCOLUMNWIDTH, 2, MAKELPARAM(max_lenth * 6, 0));
+	::SendMessage(list_view_export_, LVM_SETCOLUMNWIDTH, 2, MAKELPARAM(max_lenth * 6, 0));
+}
+
+void CMainDlg::AddUseFunctions(const std::list<IMAGE_EXPORT_FUNCTION>& function_list)
+{
+	int count = 0;
+	size_t max_lenth = 0;
+	for (auto& function : function_list) {
+		LVITEM item = {};
+		item.mask = LVIF_TEXT;
+		item.iItem = count;
+		item.iSubItem = 0;
+		item.pszText = (LPTSTR)std::to_wstring(function.hint).c_str();
+		item.state = 0;
+		item.stateMask = 0;
+		item.iImage = 0;
+		item.lParam = 0;
+		SendMessage(list_view_use_, LVM_INSERTITEM, 0, (LPARAM)&item);
+
+		wchar_t buffer[16] = { 0 };
+		swprintf_s(buffer, L"%2d(0x%04x)", function.ordinal, function.ordinal);
+		AddListViewItem(list_view_use_, count, 0, buffer);
+		swprintf_s(buffer, L"%2d(0x%04x)", function.hint, function.hint);
+		AddListViewItem(list_view_use_, count, 1, buffer);
+		auto function_name = AToU(function.function_name);
+		AddListViewItem(list_view_use_, count, 2, function_name.c_str());
+		AddListViewItem(list_view_use_, count, 3, ToHexString(function.entry_point).c_str());
+		AddListViewItem(list_view_use_, count, 4, ToHexString(function.thunk).c_str());
+		count++;
+		if (function_name.size() > max_lenth) {
+			max_lenth = function_name.size();
+		}
+	}
+	::SendMessage(list_view_use_, LVM_SETCOLUMNWIDTH, 2, MAKELPARAM(max_lenth * 6, 0));
 }
 
 void CMainDlg::OnMenuFileOpen()
@@ -173,8 +206,11 @@ LRESULT CMainDlg::OnSize(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bH
 		auto width = GET_X_LPARAM(lParam);
 		auto height = GET_Y_LPARAM(lParam);
 		auto tree_width = int(width * 0.3);
+		auto use_height = int(height*0.24);
 		::MoveWindow(tree_view_, 0, 0, tree_width, height, TRUE);
-		::MoveWindow(list_view_, tree_width, 0, width - tree_width, height, TRUE);
+		::MoveWindow(list_view_use_, tree_width, 0, width - tree_width, use_height, TRUE);
+		::MoveWindow(list_view_export_, tree_width, use_height, width - tree_width, height - use_height, TRUE);
+		
 	}
 	return 0;
 }
@@ -208,7 +244,7 @@ BOOL CMainDlg::OpenFile(const std::wstring& pe_path)
 	std::list<IMAGE_IMPORT_DLL> dll_list;
 	pe.GetImportDlls(dll_list);
 	tree_root_item_ = AddTreeItem(TVI_ROOT, TVI_FIRST, file_name.c_str());
-	TREEITEM_DATA item_data = { 0 };
+	TREEITEM_DATA item_data;
 	item_data.item_text = std::move(file_name);
 	tree_item_map_[tree_root_item_] = std::move(item_data);
 	ExpendTreeItem(tree_root_item_);
@@ -228,6 +264,9 @@ void CMainDlg::ClearTreeView()
 			for (auto& function : item.second.export_function_list) {
 				ReleaseImageExportFunction(&function);
 			}
+			for (auto& function : item.second.use_function_list) {
+				ReleaseImageExportFunction(&function);
+			}
 		}
 		tree_item_map_.clear();
 		TreeView_DeleteAllItems(tree_view_);
@@ -239,6 +278,7 @@ void CMainDlg::ExpendTreeItem(HTREEITEM item)
 	ClearListView();
 	auto itor = tree_item_map_.find(item);
 	ATLASSERT(itor != tree_item_map_.end());
+	AddUseFunctions(itor->second.use_function_list);
 	if (itor->second.read_flag) {
 		AddExportFunctions(itor->second.export_function_list);
 		return;
@@ -251,13 +291,18 @@ void CMainDlg::ExpendTreeItem(HTREEITEM item)
 	}
 	PEHelper pe(pe_path);
 	std::list<IMAGE_IMPORT_DLL> dll_list;
-	TREEITEM_DATA item_data = { 0 };
+	TREEITEM_DATA item_data;
 	if (pe.GetImportDlls(dll_list)) {
 		HTREEITEM prev_item = TVI_FIRST;
 		for (auto itor = dll_list.begin(); itor != dll_list.end(); ++itor) {
 			auto name = AToU(itor->dll_name);
 			prev_item = AddTreeItem(item, prev_item, name.c_str());
 			item_data.item_text = name;
+			//排序
+			itor->use_function_list.sort([](const IMAGE_EXPORT_FUNCTION& left, const IMAGE_EXPORT_FUNCTION& right) {
+				return left.hint < right.hint;
+			});
+			item_data.use_function_list = std::move(itor->use_function_list);
 			tree_item_map_[prev_item] = std::move(item_data);
 		}
 		TreeView_Expand(tree_view_, item, TVM_EXPAND);
@@ -285,17 +330,20 @@ void CMainDlg::InitListView()
 		lvcol.pszText = (LPWSTR)column_texts[i].c_str();
 		lvcol.cchTextMax = column_texts[i].size();
 		lvcol.cx = column_widths[i];
-		ListView_InsertColumn(list_view_, i, &lvcol);
+		ListView_InsertColumn(list_view_export_, i, &lvcol);
+		ListView_InsertColumn(list_view_use_, i, &lvcol);
 	}
-	DWORD dwStyle = ListView_GetExtendedListViewStyle(list_view_);
+	DWORD dwStyle = ListView_GetExtendedListViewStyle(list_view_export_);
 	dwStyle |= LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES
 		| LVS_EX_HEADERDRAGDROP;
-	ListView_SetExtendedListViewStyle(list_view_, dwStyle);
+	ListView_SetExtendedListViewStyle(list_view_export_, dwStyle);
+	ListView_SetExtendedListViewStyle(list_view_use_, dwStyle);
 }
 
 void CMainDlg::ClearListView()
 {
-	::SendMessage(list_view_, LVM_DELETEALLITEMS, 0, 0L);
+	::SendMessage(list_view_export_, LVM_DELETEALLITEMS, 0, 0L);
+	::SendMessage(list_view_use_, LVM_DELETEALLITEMS, 0, 0L);
 }
 
 LRESULT CMainDlg::OnTvnSelchangedTree1(int idCtrl, LPNMHDR pNMHDR, BOOL& bHandled)
@@ -306,10 +354,3 @@ LRESULT CMainDlg::OnTvnSelchangedTree1(int idCtrl, LPNMHDR pNMHDR, BOOL& bHandle
 	return 0;
 }
 
-
-LRESULT CMainDlg::OnNMRclickTree(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL& /*bHandled*/)
-{
-	// TODO: 在此添加控件通知处理程序代码
-
-	return 0;
-}
