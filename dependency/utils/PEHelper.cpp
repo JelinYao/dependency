@@ -4,13 +4,13 @@
 #pragma comment(lib, "dbghelp.lib")
 
 
-PEHelper::PEHelper(): handle_(INVALID_HANDLE_VALUE)
+PEHelper::PEHelper() : handle_(INVALID_HANDLE_VALUE)
 , section_heaer_(NULL)
 , base_address_(NULL)
 , map_handle_(NULL) {
 }
 
-PEHelper::PEHelper(const wchar_t* file): handle_(INVALID_HANDLE_VALUE)
+PEHelper::PEHelper(const wchar_t* file) : handle_(INVALID_HANDLE_VALUE)
 , section_heaer_(NULL)
 , base_address_(NULL)
 , map_handle_(NULL) {
@@ -24,18 +24,18 @@ PEHelper::PEHelper(const std::wstring &file) : handle_(INVALID_HANDLE_VALUE)
 	Open(file.c_str());
 }
 
-PEHelper::~PEHelper() { 
+PEHelper::~PEHelper() {
 	Close();
 }
 
 bool PEHelper::Open(const wchar_t* file) {
-  HANDLE file_handle = ::CreateFile(file, GENERIC_READ, FILE_SHARE_READ, NULL,
-                                    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-  if (file_handle == INVALID_HANDLE_VALUE) {
-    OutputDebugString(L"Create file error");
-    return false;
-  }
-  handle_ = file_handle;
+	HANDLE file_handle = ::CreateFile(file, GENERIC_READ, FILE_SHARE_READ, NULL,
+		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (file_handle == INVALID_HANDLE_VALUE) {
+		OutputDebugString(L"Create file error");
+		return false;
+	}
+	handle_ = file_handle;
 	map_handle_ = CreateFileMapping(file_handle, NULL, PAGE_READONLY, 0, 0, NULL);
 	if (map_handle_ == NULL) {
 		return false;
@@ -45,24 +45,24 @@ bool PEHelper::Open(const wchar_t* file) {
 		return false;
 	}
 	dos_header_ = (PIMAGE_DOS_HEADER)base_address_;
-  if (dos_header_->e_magic != IMAGE_DOS_SIGNATURE) {
-    OutputDebugString(L"Illegal PE header ");
-    return false;
-  }
+	if (dos_header_->e_magic != IMAGE_DOS_SIGNATURE) {
+		OutputDebugString(L"Illegal PE header ");
+		return false;
+	}
 	nt_header_ = (PIMAGE_NT_HEADERS)((LPBYTE)base_address_ + dos_header_->e_lfanew);
-  if (nt_header_->Signature != IMAGE_NT_SIGNATURE) {
-    OutputDebugString(L"Illegal PE header ");
-    return false;
-  }
-  return true;
+	if (nt_header_->Signature != IMAGE_NT_SIGNATURE) {
+		OutputDebugString(L"Illegal PE header ");
+		return false;
+	}
+	return true;
 }
 
 //https://blog.csdn.net/zang141588761/article/details/50401203
 void PEHelper::Close() {
-  if (handle_ != INVALID_HANDLE_VALUE) {
-    CloseHandle(handle_);
-    handle_ = INVALID_HANDLE_VALUE;
-  }
+	if (handle_ != INVALID_HANDLE_VALUE) {
+		CloseHandle(handle_);
+		handle_ = INVALID_HANDLE_VALUE;
+	}
 	if (map_handle_) {
 		if (base_address_) {
 			UnmapViewOfFile(base_address_);
@@ -173,7 +173,6 @@ bool PEHelper::GetImportDlls(std::list<IMAGE_IMPORT_DLL>& dll_list)
 		NULL
 	);
 	//减去内存映射的首地址，就是文件地址了
-	printf("FileAddress Of ImportTable: %p\n", ((DWORD)import_table - (DWORD)base_address_));
 	int i = 0;
 	while (true) {
 		IMAGE_IMPORT_DESCRIPTOR import_desc = { 0 };
@@ -218,9 +217,9 @@ bool PEHelper::GetImportDlls(std::list<IMAGE_IMPORT_DLL>& dll_list)
 		}
 		IMAGE_IMPORT_DLL dll_info;
 		CopyStringByMalloc(&dll_info.dll_name, dll_name);
-		dll_info.originalFirstThunk = import_table[i].OriginalFirstThunk;
-		dll_info.forwarderChain = import_table[i].ForwarderChain;
-		dll_info.firstThunk = import_table[i].FirstThunk;
+		dll_info.original_first_thunk = import_table[i].OriginalFirstThunk;
+		dll_info.forwarder_chain = import_table[i].ForwarderChain;
+		dll_info.first_thunk = import_table[i].FirstThunk;
 		dll_info.use_function_list = std::move(function_list);
 		dll_list.push_back(dll_info);
 		i++;

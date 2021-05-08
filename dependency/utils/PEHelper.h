@@ -3,7 +3,7 @@
 
 struct IMAGE_EXPORT_FUNCTION {
 	char* function_name = NULL;
-	DWORD thunkRVA = 0;
+	DWORD thunk_rva = 0;
 	DWORD	thunk = 0;
 	WORD hint = 0;
 	WORD ordinal = 0;
@@ -30,9 +30,9 @@ inline void CopyStringByMalloc(char** dest, const char* source) {
 
 struct IMAGE_IMPORT_DLL {
 	char* dll_name = NULL;
-	DWORD originalFirstThunk = 0;
-	DWORD forwarderChain = 0;
-	DWORD firstThunk = 0;
+	DWORD original_first_thunk = 0;
+	DWORD forwarder_chain = 0;
+	DWORD first_thunk = 0;
 	std::list<IMAGE_EXPORT_FUNCTION> use_function_list;
 };
 
@@ -44,23 +44,23 @@ inline void ReleaseImageImportDll(IMAGE_IMPORT_DLL* p) {
 }
 
 class PEHelper {
- public:
-  PEHelper();
-  PEHelper(const wchar_t* file);
+public:
+	PEHelper();
+	PEHelper(const wchar_t* file);
 	PEHelper(const std::wstring &file);
-  ~PEHelper();
+	~PEHelper();
 
-  bool Open(const wchar_t* file);
-  void Close();
+	bool Open(const wchar_t* file);
+	void Close();
 
 	bool GetExportFunctions(std::list<IMAGE_EXPORT_FUNCTION>& function_list);
 	bool GetImportDlls(std::list<IMAGE_IMPORT_DLL>& dll_list);
 
- private:
-	 LPVOID base_address_;
-	 HANDLE map_handle_;
-  HANDLE handle_;
-  PIMAGE_NT_HEADERS nt_header_;
-  PIMAGE_DOS_HEADER dos_header_;
-  IMAGE_SECTION_HEADER* section_heaer_;
+private:
+	LPVOID base_address_;
+	HANDLE map_handle_;
+	HANDLE handle_;
+	PIMAGE_NT_HEADERS nt_header_;
+	PIMAGE_DOS_HEADER dos_header_;
+	IMAGE_SECTION_HEADER* section_heaer_;
 };

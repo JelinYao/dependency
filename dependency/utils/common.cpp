@@ -61,6 +61,36 @@ bool Is64bitSystem()
 	return false;
 }
 
+bool IsPeFile(const std::wstring& file_path)
+{
+	HANDLE handle = ::CreateFile(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (handle == INVALID_HANDLE_VALUE) {
+		return false;
+	}
+	LARGE_INTEGER file_size = { 0 };
+	::GetFileSizeEx(handle, &file_size);
+	if (file_size.QuadPart <= (sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS))) {
+		::CloseHandle(handle);
+		return false;
+	}
+	IMAGE_DOS_HEADER dos_header;
+	DWORD read_bytes;
+	::ReadFile(handle, &dos_header, sizeof(IMAGE_DOS_HEADER), &read_bytes, NULL);
+	if (dos_header.e_magic != IMAGE_DOS_SIGNATURE) {
+		::CloseHandle(handle);
+		return false;
+	}
+	::SetFilePointer(handle, dos_header.e_lfanew, 0, FILE_BEGIN);
+	IMAGE_NT_HEADERS nt_header;
+	::ReadFile(handle, &nt_header, sizeof(IMAGE_NT_HEADERS), &read_bytes, NULL);
+	if (nt_header.Signature != IMAGE_NT_SIGNATURE) {
+		::CloseHandle(handle);
+		return false;
+	}
+	::CloseHandle(handle);
+	return true;
+}
+
 bool Is64bitArchiteFileA(const std::string& file_path)
 {
 	HANDLE handle = ::CreateFileA(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -73,6 +103,7 @@ bool Is64bitArchiteFileA(const std::string& file_path)
 	::SetFilePointer(handle, dos_header.e_lfanew, 0, FILE_BEGIN);
 	IMAGE_NT_HEADERS nt_header;
 	::ReadFile(handle, &nt_header, sizeof(IMAGE_NT_HEADERS), &read_bytes, NULL);
+	::CloseHandle(handle);
 	return (nt_header.FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64
 		|| nt_header.FileHeader.Machine == IMAGE_FILE_MACHINE_IA64);
 }

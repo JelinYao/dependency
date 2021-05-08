@@ -5,6 +5,9 @@
 #include "utils/PEHelper.h"
 #include "utils/common.h"
 
+constexpr wchar_t* kMsgboxTitleTip = L"提示";
+constexpr wchar_t* kMsgboxTitleError = L"错误";
+
 LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
 	is_x64_archite_ = FALSE;
@@ -29,6 +32,7 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 	list_view_export_ = ::GetDlgItem(m_hWnd, IDC_LIST1);
 	list_view_use_ = ::GetDlgItem(m_hWnd, IDC_LIST2);
 	InitListView();
+	::DragAcceptFiles(m_hWnd, TRUE);
 	// OpenFile(L"C:\\Program Files (x86)\\Tencent\\WeChat\\WeChatApp.exe");
 	return TRUE;
 }
@@ -166,16 +170,14 @@ void ExpendAllItem(HWND tree_view, HTREEITEM item, UINT code) {
 	}
 	TreeView_Expand(tree_view, item, code);
 	auto child_item = TreeView_GetChild(tree_view, item);
-	if (child_item != NULL) {
-		ExpendAllItem(tree_view, child_item, code);
-	}
-
-	while (true) {
-		item = TreeView_GetNextSibling(tree_view, item);
-		if (item == NULL) {
+	while (true)
+	{
+		if (child_item == NULL) {
 			break;
 		}
-		ExpendAllItem(tree_view, item, code);
+		TreeView_Expand(tree_view, child_item, code);
+		ExpendAllItem(tree_view, child_item, code);
+		child_item = TreeView_GetNextSibling(tree_view, child_item);
 	}
 }
 
@@ -234,8 +236,33 @@ LRESULT CMainDlg::OnCommand(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOO
 	return 0;
 }
 
+LRESULT CMainDlg::OnDropFiles(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled)
+{
+	bHandled = TRUE;
+	HDROP hDrop = (HDROP)wParam;
+	UINT count = ::DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0);
+	if (count > 1) {
+		MessageBox(L"不支持拖入多个文件", kMsgboxTitleTip, MB_OK | MB_ICONINFORMATION);
+		return 0;
+	}
+	wchar_t file_path[MAX_PATH] = { 0 };
+	count = ::DragQueryFile(hDrop, 0, file_path, MAX_PATH);
+	if (count == 0) {
+		CString msg;
+		msg.Format(L"DragQueryFile调用失败，错误码：%u", GetLastError());
+		MessageBox(msg, kMsgboxTitleError, MB_OK | MB_ICONERROR);
+		return 0;
+	}
+	OpenFile(file_path);
+	return 0;
+}
+
 BOOL CMainDlg::OpenFile(const std::wstring& pe_path)
 {
+	if (!IsPeFile(pe_path)) {
+		MessageBox(L"请打开有效的PE文件", kMsgboxTitleError, MB_OK | MB_ICONERROR);
+		return 0;
+	}
 	ClearTreeView();
 	is_x64_archite_ = Is64bitArchiteFileW(pe_path);
 	auto file_name = GetFileNameByPath(pe_path);
@@ -276,16 +303,16 @@ void CMainDlg::ClearTreeView()
 void CMainDlg::ExpendTreeItem(HTREEITEM item)
 {
 	ClearListView();
-	auto itor = tree_item_map_.find(item);
-	ATLASSERT(itor != tree_item_map_.end());
-	AddUseFunctions(itor->second.use_function_list);
-	if (itor->second.read_flag) {
-		AddExportFunctions(itor->second.export_function_list);
+	auto find_itor = tree_item_map_.find(item);
+	ATLASSERT(find_itor != tree_item_map_.end());
+	AddUseFunctions(find_itor->second.use_function_list);
+	if (find_itor->second.read_flag) {
+		AddExportFunctions(find_itor->second.export_function_list);
 		return;
 	}
-	itor->second.read_flag = TRUE;
+	find_itor->second.read_flag = TRUE;
 	std::wstring pe_path;
-	if (!SearchDllPath(is_x64_archite_, current_pe_dir_, itor->second.item_text, pe_path)) {
+	if (!SearchDllPath(is_x64_archite_, current_pe_dir_, find_itor->second.item_text, pe_path)) {
 		// 没有搜索到
 		return;
 	}
@@ -312,10 +339,11 @@ void CMainDlg::ExpendTreeItem(HTREEITEM item)
 	if (!function_list.empty()) {
 		AddExportFunctions(function_list);
 	}
-	item_data.read_flag = TRUE;
-	item_data.import_dll_list = std::move(dll_list);
-	item_data.export_function_list = std::move(function_list);
-	tree_item_map_[item] = std::move(item_data);
+	find_itor = tree_item_map_.find(item);
+	ATLASSERT(find_itor != tree_item_map_.end());
+	find_itor->second.read_flag = TRUE;
+	find_itor->second.import_dll_list = std::move(dll_list);
+	find_itor->second.export_function_list = std::move(function_list);
 }
 
 void CMainDlg::InitListView()

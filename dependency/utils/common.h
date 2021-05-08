@@ -9,6 +9,8 @@ std::wstring GetFileDirByPath(const std::wstring& file_path);
 
 bool Is64bitSystem();
 
+bool IsPeFile(const std::wstring& file_path);
+
 bool Is64bitArchiteFileA(const std::string& file_path);
 
 bool Is64bitArchiteFileW(const std::wstring& file_path);
