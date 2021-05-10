@@ -4,9 +4,12 @@
 #include <atlstr.h>
 #include "utils/PEHelper.h"
 #include "utils/common.h"
+#include <WinUser.h>
 
-constexpr wchar_t* kMsgboxTitleTip = L"提示";
-constexpr wchar_t* kMsgboxTitleError = L"错误";
+constexpr wchar_t kDefaultWindowText[] = L"dependency";
+constexpr wchar_t kSearchMSDNUrl[] = L"https://docs.microsoft.com/zh-cn/search/?terms=";
+constexpr wchar_t kMsgboxTitleTip[] = L"提示";
+constexpr wchar_t kMsgboxTitleError[] = L"错误";
 
 LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
@@ -31,6 +34,9 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 	tree_view_ = ::GetDlgItem(m_hWnd, IDC_TREE1);
 	list_view_export_ = ::GetDlgItem(m_hWnd, IDC_LIST1);
 	list_view_use_ = ::GetDlgItem(m_hWnd, IDC_LIST2);
+	list_view_ctrl_export_ = std::make_unique<CListViewCtrl>(list_view_export_);
+	list_view_ctrl_use_ = std::make_unique<CListViewCtrl>(list_view_use_);
+	tree_root_item_ = NULL;
 	InitListView();
 	::DragAcceptFiles(m_hWnd, TRUE);
 	// OpenFile(L"C:\\Program Files (x86)\\Tencent\\WeChat\\WeChatApp.exe");
@@ -191,6 +197,40 @@ void CMainDlg::OnMenuCollapseAll()
 	ExpendAllItem(tree_view_, tree_root_item_, TVE_COLLAPSE);
 }
 
+void CMainDlg::OnMenuListItemCopy()
+{
+	int select_index = (int)::SendMessage(list_view_export_, LVM_GETNEXTITEM, (WPARAM)-1, MAKELPARAM(LVNI_ALL | LVNI_SELECTED, 0));
+	CString item_text;
+	list_view_ctrl_export_->GetItemText(select_index, 2, item_text.GetBufferSetLength(128), 128);
+	if (!item_text.IsEmpty()) {
+		CopyToClipbord(item_text.GetBuffer());
+	}
+}
+
+void CMainDlg::OnMenuListItemFind()
+{
+	int select_index = (int)::SendMessage(list_view_export_, LVM_GETNEXTITEM, (WPARAM)-1, MAKELPARAM(LVNI_ALL | LVNI_SELECTED, 0));
+	CString strText;
+	list_view_ctrl_export_->GetItemText(select_index, 2, strText.GetBufferSetLength(128), 128);
+	if (!strText.IsEmpty()) {
+		CString url;
+		url.Format(L"%s%s", kSearchMSDNUrl, strText.GetBuffer());
+		::ShellExecute(NULL, L"open", url, NULL, NULL, SW_SHOW);
+	}
+}
+
+void CMainDlg::SetWindowTitle(const std::wstring& path)
+{
+	CString wnd_text;
+	if (path.empty()) {
+		wnd_text = kDefaultWindowText;
+	}
+	else {
+		wnd_text.Format(L"%s - %s", kDefaultWindowText, path.c_str());
+	}
+	::SetWindowText(m_hWnd, wnd_text);
+}
+
 LRESULT CMainDlg::OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
 	// unregister message filtering and idle updates
@@ -228,6 +268,8 @@ LRESULT CMainDlg::OnCommand(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOO
 		case ID_HELP_ABOUT: OnMenuAbout(); break;
 		case ID_VIEW_EXPEND: OnMenuExpendAll(); break;
 		case ID_VIEW_COLLAPSE: OnMenuCollapseAll(); break;
+		case ID_LISTITEM_COPY: OnMenuListItemCopy(); break;
+		case ID_LISTITEM_FIND: OnMenuListItemFind(); break;
 		default:
 			break;
 		}
@@ -275,6 +317,7 @@ BOOL CMainDlg::OpenFile(const std::wstring& pe_path)
 	item_data.item_text = std::move(file_name);
 	tree_item_map_[tree_root_item_] = std::move(item_data);
 	ExpendTreeItem(tree_root_item_);
+	SetWindowTitle(pe_path);
 	return TRUE;
 }
 
@@ -298,6 +341,7 @@ void CMainDlg::ClearTreeView()
 		tree_item_map_.clear();
 		TreeView_DeleteAllItems(tree_view_);
 	}
+	SetWindowTitle(L"");
 }
 
 void CMainDlg::ExpendTreeItem(HTREEITEM item)
@@ -382,3 +426,23 @@ LRESULT CMainDlg::OnTvnSelchangedTree1(int idCtrl, LPNMHDR pNMHDR, BOOL& bHandle
 	return 0;
 }
 
+
+
+LRESULT CMainDlg::OnNMRclickList1(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL& /*bHandled*/)
+{
+	// TODO: 在此添加控件通知处理程序代码
+	int item_count = (int)::SendMessage(list_view_export_, LVM_GETITEMCOUNT, 0, 0L);
+	if (item_count == 0) {
+		return 0;
+	}
+	HMENU hMenu = ::LoadMenu(NULL, MAKEINTRESOURCE(IDR_MENU2));
+	HMENU hSubMenu = ::GetSubMenu(hMenu, 0);
+	POINT pt;
+	::GetCursorPos(&pt);
+	::TrackPopupMenu(hSubMenu, TPM_RIGHTBUTTON, pt.x, pt.y, 0, m_hWnd, NULL);
+	::DestroyMenu(hMenu);
+	
+	return 0;
+}
+
+//https://docs.microsoft.com/en-us/search/?terms=

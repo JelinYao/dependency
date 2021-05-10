@@ -39,7 +39,16 @@ BEGIN
     END
     POPUP "帮助"
     BEGIN
-        MENUITEM "关于我们",                        ID_HELP_ABOUT
+        MENUITEM "关于我们(&A)",                    ID_HELP_ABOUT
+    END
+END
+
+IDR_MENU2 MENU
+BEGIN
+    POPUP "ListItem"
+    BEGIN
+        MENUITEM "复制函数名(&C)",                   ID_LISTITEM_COPY
+        MENUITEM "MSDN中查找该函数(&F)",              ID_LISTITEM_FIND
     END
 END
 
@@ -96,7 +105,7 @@ IDR_MAINFRAME           ICON                    "res\\dependency.ico"
 
 IDD_ABOUTBOX DIALOGEX 0, 0, 187, 102
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "About"
+CAPTION "About dependency"
 FONT 9, "Segoe UI", 0, 0, 0x0
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,130,81,50,14
@@ -104,7 +113,7 @@ BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,55,26,20,20
     GROUPBOX        "",IDC_STATIC,7,7,115,88
     CONTROL         "<a>https://github.com/jelinyao</a>",IDC_SYSLINK1,
-                    "SysLink",WS_TABSTOP,20,51,102,14
+                    "SysLink",WS_TABSTOP,20,51,92,14
 END
 
 IDD_MAINDLG DIALOGEX 0, 0, 587, 321
@@ -176,8 +185,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,2
- PRODUCTVERSION 1,0,0,2
+ FILEVERSION 1,1,0,3
+ PRODUCTVERSION 1,1,0,3
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -193,12 +202,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "FileDescription", "dependency Module"
-            VALUE "FileVersion", "1.0.0.2"
+            VALUE "FileVersion", "1.1.0.3"
             VALUE "InternalName", "dependency"
             VALUE "LegalCopyright", "Copyright 2021"
             VALUE "OriginalFilename", "dependency.exe"
             VALUE "ProductName", "dependency Module"
-            VALUE "ProductVersion", "1.0.0.2"
+            VALUE "ProductVersion", "1.1.0.3"
         END
     END
     BLOCK "VarFileInfo"

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "common.h"
 #include <Shlwapi.h>
 #pragma comment(lib, "shlwapi.lib")
@@ -214,4 +214,21 @@ bool SearchDllPath(bool is_x64_archite, const std::wstring& dll_dir, const std::
 		return true;
 	}
 	return false;
+}
+
+bool CopyToClipbord(const wchar_t* text)
+{
+	if (!OpenClipboard(NULL))
+	{
+		return true;
+	}
+	EmptyClipboard();
+	size_t nSize = wcslen(text) + 1;
+	HGLOBAL hClip = GlobalAlloc(GMEM_DDESHARE, nSize * sizeof(wchar_t));
+	PTSTR pszBuf = (PTSTR)GlobalLock(hClip);
+	wcscpy_s(pszBuf, nSize, text);
+	GlobalUnlock(hClip);
+	SetClipboardData(CF_UNICODETEXT, hClip);
+	CloseClipboard();
+	return true;
 }

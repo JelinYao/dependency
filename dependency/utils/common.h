@@ -27,3 +27,5 @@ std::wstring GetSystemPath();
 std::wstring GetSystemWow64Path();
 
 bool SearchDllPath(bool is_x64_archite, const std::wstring& dll_dir, const std::wstring& dll_name, std::wstring& dll_path);
+
+bool CopyToClipbord(const wchar_t* text);

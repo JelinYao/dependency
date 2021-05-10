@@ -4,11 +4,13 @@
 
 #pragma once
 #include <atlframe.h>
+#include <atlctrls.h>
 #include "resource.h"
 #include "AboutDlg.h"
 #include <map>
 #include <list>
 #include "utils/PEHelper.h"
+#include <memory>
 
 class CMainDlg : public CDialogImpl<CMainDlg>, public CUpdateUI<CMainDlg>,
 	public CMessageFilter, public CIdleHandler
@@ -40,6 +42,7 @@ public:
 		COMMAND_ID_HANDLER(IDOK, OnOK)
 		COMMAND_ID_HANDLER(IDCANCEL, OnCancel)
 		NOTIFY_HANDLER(IDC_TREE1, TVN_SELCHANGED, OnTvnSelchangedTree1)
+		NOTIFY_HANDLER(IDC_LIST1, NM_RCLICK, OnNMRclickList1)
 	END_MSG_MAP()
 
 	// Handler prototypes (uncomment arguments if needed):
@@ -64,6 +67,8 @@ private:
 
 	HWND list_view_export_;
 	HWND list_view_use_;
+	std::unique_ptr<CListViewCtrl> list_view_ctrl_export_;
+	std::unique_ptr<CListViewCtrl> list_view_ctrl_use_;
 
 protected:
 
@@ -86,6 +91,10 @@ protected:
 	void OnMenuAbout();
 	void OnMenuExpendAll();
 	void OnMenuCollapseAll();
+
+	void OnMenuListItemCopy();
+	void OnMenuListItemFind();
+	void SetWindowTitle(const std::wstring& path);
 
 private:
 
@@ -127,5 +136,6 @@ private:
 public:
 	LRESULT OnTvnSelchangedTree1(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL& /*bHandled*/);
 
+	LRESULT OnNMRclickList1(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL& /*bHandled*/);
 };
 
