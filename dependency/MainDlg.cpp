@@ -10,6 +10,27 @@ constexpr wchar_t kDefaultWindowText[] = L"dependency";
 constexpr wchar_t kSearchMSDNUrl[] = L"https://docs.microsoft.com/zh-cn/search/?terms=";
 constexpr wchar_t kMsgboxTitleTip[] = L"提示";
 constexpr wchar_t kMsgboxTitleError[] = L"错误";
+constexpr int kSpliterHitTestWidth = 5;
+constexpr int kSubControlMinWidth = 50;
+constexpr int kSubControlMinHeigth = 50;
+
+CMainDlg::CMainDlg()
+	: tree_view_(NULL)
+	, tree_root_item_(NULL)
+	, list_view_export_(NULL)
+	, list_view_use_(NULL)
+	, left_spliter_xpos_(0)
+	, right_spliter_ypos(0)
+	, left_splitting(false)
+	, right_splitting(false)
+	, left_spliter_cursor(NULL)
+	, right_spliter_cursor(NULL)
+{
+}
+
+CMainDlg::~CMainDlg()
+{
+}
 
 LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
@@ -30,7 +51,8 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 	pLoop->AddIdleHandler(this);
 
 	UIAddChildWindowContainer(m_hWnd);
-
+	left_spliter_cursor = ::LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZEWE));
+	right_spliter_cursor = ::LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZENS));
 	tree_view_ = ::GetDlgItem(m_hWnd, IDC_TREE1);
 	list_view_export_ = ::GetDlgItem(m_hWnd, IDC_LIST1);
 	list_view_use_ = ::GetDlgItem(m_hWnd, IDC_LIST2);
@@ -39,7 +61,10 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 	tree_root_item_ = NULL;
 	InitListView();
 	::DragAcceptFiles(m_hWnd, TRUE);
-	// OpenFile(L"C:\\Program Files (x86)\\Tencent\\WeChat\\WeChatApp.exe");
+	RECT rc;
+	::GetClientRect(m_hWnd, &rc);
+	left_spliter_xpos_ = int((rc.right - rc.left)*0.3);
+	right_spliter_ypos = int((rc.bottom - rc.top)*0.24);
 	return TRUE;
 }
 
@@ -122,21 +147,24 @@ void CMainDlg::AddUseFunctions(const std::list<IMAGE_EXPORT_FUNCTION>& function_
 		AddListViewItem(list_view_use_, count, 0, buffer);
 		swprintf_s(buffer, L"%2d(0x%04x)", function.hint, function.hint);
 		AddListViewItem(list_view_use_, count, 1, buffer);
-		auto function_name = AToU(function.function_name);
-		AddListViewItem(list_view_use_, count, 2, function_name.c_str());
+		if (function.function_name != NULL) {
+			auto function_name = AToU(function.function_name);
+			AddListViewItem(list_view_use_, count, 2, function_name.c_str());
+			if (function_name.size() > max_lenth) {
+				max_lenth = function_name.size();
+			}
+		}
 		AddListViewItem(list_view_use_, count, 3, ToHexString(function.entry_point).c_str());
 		AddListViewItem(list_view_use_, count, 4, ToHexString(function.thunk).c_str());
 		count++;
-		if (function_name.size() > max_lenth) {
-			max_lenth = function_name.size();
-		}
 	}
-	::SendMessage(list_view_use_, LVM_SETCOLUMNWIDTH, 2, MAKELPARAM(max_lenth * 6, 0));
+	int length = max(max_lenth * 6, 60);
+	::SendMessage(list_view_use_, LVM_SETCOLUMNWIDTH, 2, MAKELPARAM(length, 0));
 }
 
 void CMainDlg::OnMenuFileOpen()
 {
-	OPENFILENAME ofn = {0};
+	OPENFILENAME ofn = { 0 };
 	TCHAR szFile[MAX_PATH] = { 0 };
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
@@ -147,7 +175,7 @@ void CMainDlg::OnMenuFileOpen()
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = 0;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST; /*OFN_EXPLORER | OFN_ALLOWMULTISELECT;*/ 
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST; /*OFN_EXPLORER | OFN_ALLOWMULTISELECT;*/
 	if (GetOpenFileName(&ofn)) {
 		OpenFile(std::wstring(ofn.lpstrFile));
 	}
@@ -247,21 +275,21 @@ LRESULT CMainDlg::OnSize(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bH
 	if (wParam != SIZE_MINIMIZED) {
 		auto width = GET_X_LPARAM(lParam);
 		auto height = GET_Y_LPARAM(lParam);
-		auto tree_width = int(width * 0.3);
-		auto use_height = int(height*0.24);
-		::MoveWindow(tree_view_, 0, 0, tree_width, height, TRUE);
-		::MoveWindow(list_view_use_, tree_width, 0, width - tree_width, use_height, TRUE);
-		::MoveWindow(list_view_export_, tree_width, use_height, width - tree_width, height - use_height, TRUE);
-		
+
+		::MoveWindow(tree_view_, 0, 0, left_spliter_xpos_ - 1, height, TRUE);
+		::MoveWindow(list_view_use_, left_spliter_xpos_ + 1, 0, width - left_spliter_xpos_ - 1, right_spliter_ypos - 1, TRUE);
+		::MoveWindow(list_view_export_, left_spliter_xpos_ + 1, right_spliter_ypos + 1,
+			width - left_spliter_xpos_ - 1, height - right_spliter_ypos - 1, TRUE);
 	}
 	return 0;
 }
 
 LRESULT CMainDlg::OnCommand(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled)
 {
-	if (HIWORD(wParam) == 0) {
-		switch (LOWORD(wParam))
-		{
+	int notify_code = HIWORD(wParam);
+	int ctrl_id = LOWORD(wParam);
+	if (notify_code == 0) {
+		switch (ctrl_id) {
 		case ID_FILE_OPEN: OnMenuFileOpen(); break;
 		case ID_FILE_CLOSE: OnMenuFileClose(); break;
 		case ID_FILE_EXIT: OnMenuExit(); break;
@@ -306,6 +334,7 @@ BOOL CMainDlg::OpenFile(const std::wstring& pe_path)
 		return 0;
 	}
 	ClearTreeView();
+	current_pe_path_ = pe_path;
 	is_x64_archite_ = Is64bitArchiteFileW(pe_path);
 	auto file_name = GetFileNameByPath(pe_path);
 	current_pe_dir_ = GetFileDirByPath(pe_path);
@@ -326,8 +355,9 @@ void CMainDlg::ClearTreeView()
 	tree_root_item_ = NULL;
 	is_x64_archite_ = FALSE;
 	current_pe_dir_.clear();
+	current_pe_path_.clear();
 	if (!tree_item_map_.empty()) {
-		for (auto& item: tree_item_map_) {
+		for (auto& item : tree_item_map_) {
 			for (auto& dll : item.second.import_dll_list) {
 				ReleaseImageImportDll(&dll);
 			}
@@ -426,8 +456,6 @@ LRESULT CMainDlg::OnTvnSelchangedTree1(int idCtrl, LPNMHDR pNMHDR, BOOL& bHandle
 	return 0;
 }
 
-
-
 LRESULT CMainDlg::OnNMRclickList1(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL& /*bHandled*/)
 {
 	// TODO: 在此添加控件通知处理程序代码
@@ -441,8 +469,90 @@ LRESULT CMainDlg::OnNMRclickList1(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL& /*bHandl
 	::GetCursorPos(&pt);
 	::TrackPopupMenu(hSubMenu, TPM_RIGHTBUTTON, pt.x, pt.y, 0, m_hWnd, NULL);
 	::DestroyMenu(hMenu);
-	
+
+	return 0;
+}
+
+BOOL CMainDlg::PreTranslateMessage(MSG* pMsg)
+{
+	if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_F5) {
+		if (!current_pe_path_.empty()) {
+			auto pe_path = current_pe_path_;
+			OpenFile(pe_path);
+		}
+	}
+	return CWindow::IsDialogMessage(pMsg);
+}
+
+LRESULT CMainDlg::OnLButtonDown(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	int x = GET_X_LPARAM(lParam);
+	int y = GET_Y_LPARAM(lParam);
+	if (x >= left_spliter_xpos_ - kSpliterHitTestWidth && x <= left_spliter_xpos_ + kSpliterHitTestWidth) {
+		left_splitting = true;
+	}
+	else if (y >= right_spliter_ypos - kSpliterHitTestWidth && y <= right_spliter_ypos + kSpliterHitTestWidth) {
+		right_splitting = true;
+	}
+	return 0;
+}
+
+LRESULT CMainDlg::OnLButtonUp(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled)
+{
+	if (left_splitting) {
+		left_splitting = false;
+		::ReleaseCapture();
+	}
+	else if (right_splitting) {
+		right_splitting = false;
+		::ReleaseCapture();
+	}
+	return 0;
+}
+
+LRESULT CMainDlg::OnMouseMove(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	int x = GET_X_LPARAM(lParam);
+	int y = GET_Y_LPARAM(lParam);
+	if (x >= left_spliter_xpos_ - kSpliterHitTestWidth && x <= left_spliter_xpos_ + kSpliterHitTestWidth) {
+		::SetCursor(left_spliter_cursor);
+		::SetCapture(m_hWnd);
+	}
+	else if (y >= right_spliter_ypos - kSpliterHitTestWidth && y <= right_spliter_ypos + kSpliterHitTestWidth) {
+		::SetCursor(right_spliter_cursor);
+		::SetCapture(m_hWnd);
+	}
+	else {
+		::ReleaseCapture();
+	}
+	if (wParam == MK_LBUTTON && (left_splitting || right_splitting)) {
+		RECT rc;
+		::GetClientRect(m_hWnd, &rc);
+		if (left_splitting) {
+			if (x<kSubControlMinWidth || x>rc.right - kSubControlMinWidth) {
+				return 0;
+			}
+			left_spliter_xpos_ = x;
+		}
+		else if (right_splitting) {
+			if (y<kSubControlMinHeigth || y>rc.right - kSubControlMinHeigth) {
+				return 0;
+			}
+			right_spliter_ypos = y;
+		}
+		//根据新的分界位置发送WM_SIZE消息,重新调整左右控件的位置
+		SendMessage(m_hWnd, WM_SIZE, 0, MAKELPARAM(rc.right, rc.bottom));
+	}
 	return 0;
 }
 
 //https://docs.microsoft.com/en-us/search/?terms=
+
+/*
+C++函数符号：
+https://blog.csdn.net/hejinjing_tom_com/article/details/6288816?utm_medium=distribute.pc_aggpage_search_result.none-task-blog-2~aggregatepage~first_rank_v2~rank_aggregation-1-6288816.pc_agg_rank_aggregation&utm_term=c%2B%2B%E5%87%BD%E6%95%B0%E5%90%8D%E5%91%BD%E5%90%8D%E8%A7%84%E5%88%99&spm=1000.2123.3001.4430
+
+Windows WDDM thunk API:
+https://zhuanlan.zhihu.com/p/169311344
+
+*/

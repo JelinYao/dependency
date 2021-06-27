@@ -16,12 +16,10 @@ class CMainDlg : public CDialogImpl<CMainDlg>, public CUpdateUI<CMainDlg>,
 	public CMessageFilter, public CIdleHandler
 {
 public:
-	enum { IDD = IDD_MAINDLG };
+	CMainDlg();
+	~CMainDlg();
 
-	virtual BOOL PreTranslateMessage(MSG* pMsg)
-	{
-		return CWindow::IsDialogMessage(pMsg);
-	}
+	enum { IDD = IDD_MAINDLG };
 
 	virtual BOOL OnIdle()
 	{
@@ -38,6 +36,9 @@ public:
 		MESSAGE_HANDLER(WM_SIZE, OnSize)
 		MESSAGE_HANDLER(WM_COMMAND, OnCommand)
 		MESSAGE_HANDLER(WM_DROPFILES, OnDropFiles)
+		MESSAGE_HANDLER(WM_LBUTTONDOWN, OnLButtonDown)
+		MESSAGE_HANDLER(WM_LBUTTONUP, OnLButtonUp)
+		MESSAGE_HANDLER(WM_MOUSEMOVE, OnMouseMove)
 		COMMAND_ID_HANDLER(ID_APP_ABOUT, OnAppAbout)
 		COMMAND_ID_HANDLER(IDOK, OnOK)
 		COMMAND_ID_HANDLER(IDCANCEL, OnCancel)
@@ -49,6 +50,7 @@ public:
 	//	LRESULT MessageHandler(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 	//	LRESULT CommandHandler(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 	//	LRESULT NotifyHandler(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bHandled*/)
+
 private:
 	class TREEITEM_DATA {
 	public:
@@ -59,17 +61,6 @@ private:
 		std::list<IMAGE_IMPORT_DLL> import_dll_list;
 	};
 
-	HWND tree_view_;
-	HTREEITEM tree_root_item_;
-	bool is_x64_archite_;
-	std::wstring current_pe_dir_;
-	std::map<HTREEITEM, TREEITEM_DATA> tree_item_map_;
-
-	HWND list_view_export_;
-	HWND list_view_use_;
-	std::unique_ptr<CListViewCtrl> list_view_ctrl_export_;
-	std::unique_ptr<CListViewCtrl> list_view_ctrl_use_;
-
 protected:
 
 	BOOL OpenFile(const std::wstring& pe_path);
@@ -78,7 +69,7 @@ protected:
 
 	void InitListView();
 	void ClearListView();
-	
+
 	HTREEITEM AddTreeItem(HTREEITEM hParent, HTREEITEM hPrev, LPCTSTR pszCaption);
 	void AddListViewItem(HWND list_view, int item_index, int column_index, LPCTSTR text);
 
@@ -97,6 +88,7 @@ protected:
 	void SetWindowTitle(const std::wstring& path);
 
 private:
+	BOOL PreTranslateMessage(MSG* pMsg) override;
 
 	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 
@@ -107,6 +99,12 @@ private:
 	LRESULT OnCommand(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled);
 
 	LRESULT OnDropFiles(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled);
+
+	LRESULT OnLButtonDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled);
+
+	LRESULT OnLButtonUp(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled);
+
+	LRESULT OnMouseMove(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled);
 
 	LRESULT OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 	{
@@ -132,10 +130,29 @@ private:
 		DestroyWindow();
 		::PostQuitMessage(nVal);
 	}
-	
+
 public:
 	LRESULT OnTvnSelchangedTree1(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL& /*bHandled*/);
 
 	LRESULT OnNMRclickList1(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL& /*bHandled*/);
+
+private:
+	HWND tree_view_;
+	HTREEITEM tree_root_item_;
+	bool is_x64_archite_;
+	std::wstring current_pe_dir_;
+	std::wstring current_pe_path_;
+	std::map<HTREEITEM, TREEITEM_DATA> tree_item_map_;
+
+	HWND list_view_export_;
+	HWND list_view_use_;
+	std::unique_ptr<CListViewCtrl> list_view_ctrl_export_;
+	std::unique_ptr<CListViewCtrl> list_view_ctrl_use_;
+	bool left_splitting;
+	int left_spliter_xpos_;
+	bool right_splitting;
+	int right_spliter_ypos;
+	HCURSOR left_spliter_cursor;
+	HCURSOR right_spliter_cursor;
 };
 

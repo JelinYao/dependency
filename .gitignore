@@ -30,3 +30,5 @@
 *.exe
 *.out
 *.app
+/dependency/Release
+/dependency/Debug

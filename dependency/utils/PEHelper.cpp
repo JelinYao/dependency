@@ -208,6 +208,9 @@ bool PEHelper::GetImportDlls(std::list<IMAGE_IMPORT_DLL>& dll_list)
 					nt_header_, base_address_,
 					pThunk[j].u1.AddressOfData,
 					NULL);
+				if (pFuncName == NULL || pFuncName->Name == NULL) {
+					continue;
+				}
 				printf(" \t [%d] \t %ld \t %s\n ", j, pFuncName->Hint, pFuncName->Name);
 				use_function.hint = pFuncName->Hint;
 				CopyStringByMalloc(&use_function.function_name, pFuncName->Name);
