@@ -4,23 +4,17 @@
 #pragma comment(lib, "dbghelp.lib")
 
 
-PEHelper::PEHelper() : handle_(INVALID_HANDLE_VALUE)
-, section_heaer_(NULL)
-, base_address_(NULL)
-, map_handle_(NULL) {
+PEHelper::PEHelper()
+{
 }
 
-PEHelper::PEHelper(const wchar_t* file) : handle_(INVALID_HANDLE_VALUE)
-, section_heaer_(NULL)
-, base_address_(NULL)
-, map_handle_(NULL) {
+PEHelper::PEHelper(const wchar_t* file)
+{
 	Open(file);
 }
 
-PEHelper::PEHelper(const std::wstring &file) : handle_(INVALID_HANDLE_VALUE)
-, section_heaer_(NULL)
-, base_address_(NULL)
-, map_handle_(NULL) {
+PEHelper::PEHelper(const std::wstring &file)
+{
 	Open(file.c_str());
 }
 
@@ -49,10 +43,15 @@ bool PEHelper::Open(const wchar_t* file) {
 		OutputDebugString(L"Illegal PE header ");
 		return false;
 	}
-	nt_header_ = (PIMAGE_NT_HEADERS)((LPBYTE)base_address_ + dos_header_->e_lfanew);
-	if (nt_header_->Signature != IMAGE_NT_SIGNATURE) {
+	nt_header32_ = (PIMAGE_NT_HEADERS32)((LPBYTE)base_address_ + dos_header_->e_lfanew);
+	if (nt_header32_->Signature != IMAGE_NT_SIGNATURE) {
 		OutputDebugString(L"Illegal PE header ");
 		return false;
+	}
+	is_x64_ = (nt_header32_->FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64
+		|| nt_header32_->FileHeader.Machine == IMAGE_FILE_MACHINE_IA64);
+	if (is_x64_) {
+		nt_header64_ = (PIMAGE_NT_HEADERS64)nt_header32_;
 	}
 	return true;
 }
@@ -108,49 +107,48 @@ void PEHelper::Close() {
 
 //https://www.cnblogs.com/hoodlum1980/archive/2010/09/11/1824133.html
 bool PEHelper::GetExportFunctions(std::list<IMAGE_EXPORT_FUNCTION>& function_list) {
-	DWORD rva_export_table = nt_header_->OptionalHeader.DataDirectory[0].VirtualAddress;
+	DWORD rva_export_table = is_x64_ ? nt_header64_->OptionalHeader.DataDirectory[0].VirtualAddress 
+		: nt_header32_->OptionalHeader.DataDirectory[0].VirtualAddress;
 	if (rva_export_table == NULL) {
 		return false;
 	}
-	PIMAGE_EXPORT_DIRECTORY image_export_dir = (PIMAGE_EXPORT_DIRECTORY)ImageRvaToVa(nt_header_, base_address_, rva_export_table, NULL);
-
-	//dll名称（char*）
-	LPCSTR szDllName = (LPCSTR)ImageRvaToVa(
-		nt_header_, base_address_,
-		image_export_dir->Name,
-		NULL);
+	PIMAGE_EXPORT_DIRECTORY image_export_dir = (PIMAGE_EXPORT_DIRECTORY)ImageRvaToVa((PIMAGE_NT_HEADERS)nt_header32_, base_address_, 
+		rva_export_table, NULL);
 
 	//现在加载每个节点
-	DWORD ImageBase = nt_header_->OptionalHeader.ImageBase;
-
 	//以下全部是RVA。换算到数组入口处的VA：
-	PDWORD pFunctions = (PDWORD)ImageRvaToVa(
-		nt_header_, base_address_,
+	PDWORD functions = (PDWORD)ImageRvaToVa((PIMAGE_NT_HEADERS)nt_header32_, base_address_,
 		image_export_dir->AddressOfFunctions,
 		NULL);
+	if (functions == NULL) {
+		return true;
+	}
 
-	PWORD pOrdinals = (PWORD)ImageRvaToVa(
-		nt_header_, base_address_,
+	PWORD ordinals = (PWORD)ImageRvaToVa((PIMAGE_NT_HEADERS)nt_header32_, base_address_,
 		image_export_dir->AddressOfNameOrdinals,
 		NULL);
+	if (ordinals == NULL) {
+		return true;
+	}
 
 	if (image_export_dir->AddressOfNames == 0) {
 		// 没有导出函数
 		return true;
 	}
 
-	PDWORD pNames = (PDWORD)ImageRvaToVa(nt_header_, base_address_, image_export_dir->AddressOfNames, NULL);
-
+	PDWORD pNames = (PDWORD)ImageRvaToVa((PIMAGE_NT_HEADERS)nt_header32_, base_address_, 
+		image_export_dir->AddressOfNames, NULL);
 	for (DWORD i = 0; i < image_export_dir->NumberOfFunctions; i++)
 	{
 		//函数名称
-		LPCSTR function_name = (LPCSTR)ImageRvaToVa(nt_header_, base_address_, pNames[i], NULL);
+		LPCSTR function_name = (LPCSTR)ImageRvaToVa((PIMAGE_NT_HEADERS)nt_header32_, base_address_, 
+			pNames[i], NULL);
 		if (function_name == NULL) {
 			continue;
 		}
-		auto temp = pOrdinals[i];
+		auto temp = ordinals[i];
 		IMAGE_EXPORT_FUNCTION function;
-		function.entry_point = pFunctions[i];
+		function.entry_point = functions[i];
 		CopyStringByMalloc(&function.function_name, function_name);
 		function.hint = (WORD)i;
 		function.ordinal = (WORD)(image_export_dir->Base + i);
@@ -162,15 +160,13 @@ bool PEHelper::GetExportFunctions(std::list<IMAGE_EXPORT_FUNCTION>& function_lis
 //https://www.cnblogs.com/hoodlum1980/archive/2010/09/08/1821778.html
 bool PEHelper::GetImportDlls(std::list<IMAGE_IMPORT_DLL>& dll_list)
 {
-	DWORD rva_import_table = nt_header_->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
+	DWORD rva_import_table = is_x64_ ? nt_header64_->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress
+		: nt_header32_->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
 	if (rva_import_table == NULL) {
 		return false;
 	}
-	PIMAGE_IMPORT_DESCRIPTOR import_table = (PIMAGE_IMPORT_DESCRIPTOR)ImageRvaToVa(
-		nt_header_,
-		base_address_,
-		rva_import_table,
-		NULL
+	PIMAGE_IMPORT_DESCRIPTOR import_table = (PIMAGE_IMPORT_DESCRIPTOR)ImageRvaToVa((PIMAGE_NT_HEADERS)nt_header32_, base_address_,
+		rva_import_table, NULL
 	);
 	//减去内存映射的首地址，就是文件地址了
 	int i = 0;
@@ -180,13 +176,10 @@ bool PEHelper::GetImportDlls(std::list<IMAGE_IMPORT_DLL>& dll_list)
 		if (import_desc.TimeDateStamp == NULL && import_desc.Name == NULL) {
 			break;
 		}
-		LPCSTR dll_name = (LPCSTR)ImageRvaToVa(
-			nt_header_, base_address_,
-			import_table[i].Name, //DLL名称的RVA
-			NULL);
+		LPCSTR dll_name = (LPCSTR)ImageRvaToVa((PIMAGE_NT_HEADERS)nt_header32_, base_address_,
+			import_table[i].Name, NULL);
 
-		PIMAGE_THUNK_DATA32 pThunk = (PIMAGE_THUNK_DATA32)ImageRvaToVa(
-			nt_header_, base_address_,
+		PIMAGE_THUNK_DATA32 thunk = (PIMAGE_THUNK_DATA32)ImageRvaToVa((PIMAGE_NT_HEADERS)nt_header32_, base_address_,
 			import_table[i].OriginalFirstThunk, //【注意】这里使用的是OriginalFirstThunk
 			NULL);
 		int j = 0;
@@ -194,26 +187,26 @@ bool PEHelper::GetImportDlls(std::list<IMAGE_IMPORT_DLL>& dll_list)
 		// https://blog.csdn.net/zang141588761/article/details/50401203
 		std::list<IMAGE_EXPORT_FUNCTION> function_list;
 		while (true) {
-			memcpy(&null_thunk, pThunk + j, sizeof(IMAGE_THUNK_DATA32));
+			memcpy(&null_thunk, thunk + j, sizeof(IMAGE_THUNK_DATA32));
 			if (null_thunk.u1.AddressOfData == 0 || null_thunk.u1.Function == 0) {
 				break;
 			}
 			IMAGE_EXPORT_FUNCTION use_function;
-			if (pThunk[j].u1.AddressOfData & IMAGE_ORDINAL_FLAG32) {
-				printf(" \t [%d] \t %ld \t 按序号导入\n ", j, pThunk[j].u1.AddressOfData & 0xffff);
-				use_function.ordinal = pThunk[j].u1.AddressOfData & 0xffff;
+			if (thunk[j].u1.AddressOfData & IMAGE_ORDINAL_FLAG32) {
+				// printf(" \t [%d] \t %ld \t 按序号导入\n ", j, thunk[j].u1.AddressOfData & 0xffff);
+				use_function.ordinal = thunk[j].u1.AddressOfData & 0xffff;
 			}
 			else {
-				PIMAGE_IMPORT_BY_NAME pFuncName = (PIMAGE_IMPORT_BY_NAME)ImageRvaToVa(
-					nt_header_, base_address_,
-					pThunk[j].u1.AddressOfData,
+				PIMAGE_IMPORT_BY_NAME pFuncName = (PIMAGE_IMPORT_BY_NAME)ImageRvaToVa((PIMAGE_NT_HEADERS)nt_header32_, base_address_,
+					thunk[j].u1.AddressOfData,
 					NULL);
 				if (pFuncName == NULL || pFuncName->Name == NULL) {
+					j++;
 					continue;
 				}
-				printf(" \t [%d] \t %ld \t %s\n ", j, pFuncName->Hint, pFuncName->Name);
+				// printf(" \t [%d] \t %ld \t %s\n ", j, pFuncName->Hint, pFuncName->Name);
 				use_function.hint = pFuncName->Hint;
-				CopyStringByMalloc(&use_function.function_name, pFuncName->Name);
+				CopyStringByMalloc(&use_function.function_name, (const char*)pFuncName->Name);
 			}
 			j++;
 			function_list.push_back(use_function);

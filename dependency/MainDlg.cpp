@@ -254,7 +254,7 @@ void CMainDlg::SetWindowTitle(const std::wstring& path)
 		wnd_text = kDefaultWindowText;
 	}
 	else {
-		wnd_text.Format(L"%s - %s", kDefaultWindowText, path.c_str());
+		wnd_text.Format(L"%s - %s - %s", kDefaultWindowText, path.c_str(), (is_x64_archite_) ? L"x64" : L"x86");
 	}
 	::SetWindowText(m_hWnd, wnd_text);
 }
@@ -335,10 +335,10 @@ BOOL CMainDlg::OpenFile(const std::wstring& pe_path)
 	}
 	ClearTreeView();
 	current_pe_path_ = pe_path;
-	is_x64_archite_ = Is64bitArchiteFileW(pe_path);
 	auto file_name = GetFileNameByPath(pe_path);
 	current_pe_dir_ = GetFileDirByPath(pe_path);
 	PEHelper pe(pe_path);
+	is_x64_archite_ = pe.IsX64Archite();
 	std::list<IMAGE_IMPORT_DLL> dll_list;
 	pe.GetImportDlls(dll_list);
 	tree_root_item_ = AddTreeItem(TVI_ROOT, TVI_FIRST, file_name.c_str());

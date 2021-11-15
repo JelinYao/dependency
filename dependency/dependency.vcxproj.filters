@@ -16,6 +16,9 @@
     <Filter Include="utils">
       <UniqueIdentifier>{56e679b8-4faf-421e-bc6a-ca739c3c1ebd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="base">
+      <UniqueIdentifier>{ed885448-71dd-4362-99f3-fc0989edc211}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -52,6 +55,9 @@
     </ClInclude>
     <ClInclude Include="utils\PEHelper.h">
       <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="base\no_destructor.h">
+      <Filter>base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

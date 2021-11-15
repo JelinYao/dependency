@@ -52,15 +52,18 @@ public:
 
 	bool Open(const wchar_t* file);
 	void Close();
+	bool IsX64Archite() const { return is_x64_; }
 
 	bool GetExportFunctions(std::list<IMAGE_EXPORT_FUNCTION>& function_list);
 	bool GetImportDlls(std::list<IMAGE_IMPORT_DLL>& dll_list);
 
 private:
-	LPVOID base_address_;
-	HANDLE map_handle_;
-	HANDLE handle_;
-	PIMAGE_NT_HEADERS nt_header_;
-	PIMAGE_DOS_HEADER dos_header_;
-	IMAGE_SECTION_HEADER* section_heaer_;
+	bool is_x64_ = false;
+	LPVOID base_address_ = NULL;
+	HANDLE map_handle_ = NULL;
+	HANDLE handle_ = INVALID_HANDLE_VALUE;
+	PIMAGE_NT_HEADERS32 nt_header32_ = NULL;
+	PIMAGE_NT_HEADERS64 nt_header64_ = NULL;
+	PIMAGE_DOS_HEADER dos_header_ = NULL;
+	IMAGE_SECTION_HEADER* section_heaer_ = NULL;
 };

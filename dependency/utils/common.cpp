@@ -163,7 +163,7 @@ __end:
 
 std::wstring ToHexString(DWORD value)
 {
-	wchar_t buffer[16] = { 0 };
+	wchar_t buffer[20] = { 0 };
 	wsprintf(buffer, L"0x%p", value);
 	return std::wstring(buffer);
 }
