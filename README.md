@@ -1,5 +1,6 @@
 # dependency
 Dependency Walker在Win10上面太卡了，受不了了，自己开发一个替代。支持显示PE文件导出函数表、依赖DLL、依赖DLL导出函数表等信息。
+Dependency Walker is too stuck on Windows 10 , so I developed a replacement myself.
 
 ## 更新记录 
 ### 2021年5月8日 - 1.0.0.2
