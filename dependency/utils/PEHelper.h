@@ -21,7 +21,7 @@ inline void CopyStringByMalloc(char** dest, const char* source) {
 	if (source == NULL) {
 		return;
 	}
-	int length = strlen(source);
+	size_t length = strlen(source);
 	char* p = (char*)malloc(length + 1);
 	memcpy(p, source, length);
 	p[length] = '\0';

@@ -16,7 +16,10 @@ bool Is64bitArchiteFileA(const std::string& file_path);
 bool Is64bitArchiteFileW(const std::wstring& file_path);
 
 std::string	UToA(const std::wstring& str);
+std::string UToUtf8(const std::wstring& wstrUnicode);
+
 std::wstring AToU(const std::string& str);
+std::wstring Utf8ToU(const std::string& str);
 
 std::wstring ToHexString(DWORD value);
 

@@ -16,8 +16,11 @@
     <Filter Include="utils">
       <UniqueIdentifier>{56e679b8-4faf-421e-bc6a-ca739c3c1ebd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="base">
-      <UniqueIdentifier>{ed885448-71dd-4362-99f3-fc0989edc211}</UniqueIdentifier>
+    <Filter Include="thirdpart">
+      <UniqueIdentifier>{b7da20d2-69c2-4802-9534-9676b106e42a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="thirdpart\tinyxml2">
+      <UniqueIdentifier>{ede80979-c6fc-4598-917b-2cb4b8fd6cb4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -34,6 +37,15 @@
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="thirdpart\tinyxml2\tinyxml2.cpp">
+      <Filter>thirdpart\tinyxml2</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourceMgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LanguageMgr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -56,8 +68,23 @@
     <ClInclude Include="utils\PEHelper.h">
       <Filter>utils</Filter>
     </ClInclude>
-    <ClInclude Include="base\no_destructor.h">
-      <Filter>base</Filter>
+    <ClInclude Include="thirdpart\tinyxml2\tinyxml2.h">
+      <Filter>thirdpart\tinyxml2</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceMgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LanguageMgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Language.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceDelegate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MenuDefine.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

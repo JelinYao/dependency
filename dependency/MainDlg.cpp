@@ -5,11 +5,12 @@
 #include "utils/PEHelper.h"
 #include "utils/common.h"
 #include <WinUser.h>
+#include "ResourceMgr.h"
+#include "Language.h"
+#include "MenuDefine.h"
 
 constexpr wchar_t kDefaultWindowText[] = L"dependency";
 constexpr wchar_t kSearchMSDNUrl[] = L"https://docs.microsoft.com/zh-cn/search/?terms=";
-constexpr wchar_t kMsgboxTitleTip[] = L"提示";
-constexpr wchar_t kMsgboxTitleError[] = L"错误";
 constexpr int kSpliterHitTestWidth = 5;
 constexpr int kSubControlMinWidth = 50;
 constexpr int kSubControlMinHeigth = 50;
@@ -65,6 +66,8 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 	::GetClientRect(m_hWnd, &rc);
 	left_spliter_xpos_ = int((rc.right - rc.left)*0.3);
 	right_spliter_ypos = int((rc.bottom - rc.top)*0.24);
+    // init resource
+    ResourceMgr::Instance()->Init(this);
 	return TRUE;
 }
 
@@ -73,7 +76,7 @@ HTREEITEM CMainDlg::AddTreeItem(HTREEITEM hParent, HTREEITEM hPrev, LPCTSTR pszC
 	TVINSERTSTRUCT tree_view_struct = { 0 };
 	tree_view_item.mask = TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
 	tree_view_item.pszText = (LPTSTR)pszCaption;
-	tree_view_item.cchTextMax = wcslen(pszCaption);
+	tree_view_item.cchTextMax = (int)wcslen(pszCaption);
 
 	tree_view_struct.item = tree_view_item;
 	tree_view_struct.hInsertAfter = hPrev;
@@ -86,7 +89,7 @@ void CMainDlg::AddListViewItem(HWND list_view, int item_index, int column_index,
 	LVITEM list_view_item;
 	memset(&list_view_item, 0, sizeof(LVITEM));
 	list_view_item.mask = LVIF_TEXT;
-	list_view_item.cchTextMax = wcslen(text);
+	list_view_item.cchTextMax = (int)wcslen(text);
 	list_view_item.iItem = item_index;
 	list_view_item.iSubItem = column_index;
 	list_view_item.pszText = (LPWSTR)text;
@@ -158,7 +161,7 @@ void CMainDlg::AddUseFunctions(const std::list<IMAGE_EXPORT_FUNCTION>& function_
 		AddListViewItem(list_view_use_, count, 4, ToHexString(function.thunk).c_str());
 		count++;
 	}
-	int length = max(max_lenth * 6, 60);
+	size_t length = max(max_lenth * 6, 60);
 	::SendMessage(list_view_use_, LVM_SETCOLUMNWIDTH, 2, MAKELPARAM(length, 0));
 }
 
@@ -259,6 +262,57 @@ void CMainDlg::SetWindowTitle(const std::wstring& path)
 	::SetWindowText(m_hWnd, wnd_text);
 }
 
+LRESULT CMainDlg::OnClickLanguageMenu(int id)
+{
+	int index = id - ID_LANGUAGE_BASE;
+	if (index < 0) {
+		return -1;
+	}
+	ResourceMgr::Instance()->SwitchLanguage(index);
+	return 0;
+}
+
+void CMainDlg::OnSwitchLanguage()
+{
+    HMENU menu = ::GetMenu(m_hWnd);
+	::SetMenu(m_hWnd, NULL);
+	for (int i = 0; i < kSubMenuCount; ++i) {
+        auto text = ResourceMgr::Instance()->GetText(kMenuList[i]);
+        if (text) {
+            ::ModifyMenu(menu, i, MF_BYPOSITION | MF_STRING, 0, text);
+        }
+	}
+	for (int i = 0; i < kSubMenuCount; ++i) {
+		HMENU subMenu = ::GetSubMenu(menu, i);
+		char** key = (char**)(kSubMenus[i].array);
+		for (int j = 0; j < kSubMenus[i].count; ++j) {
+            auto text = ResourceMgr::Instance()->GetText(key[j]);
+            if (text) {
+				UINT id = ::GetMenuItemID(subMenu, j);
+                ::ModifyMenu(subMenu, j, MF_BYPOSITION | MF_STRING, id, text);
+            }
+		}
+	}
+	// update window menu
+	::SetMenu(m_hWnd, menu);
+}
+
+void CMainDlg::OnAddLanguage(const wchar_t* text)
+{
+	HMENU menu = ::GetMenu(m_hWnd);
+	HMENU subMenu = ::GetSubMenu(menu, 2);
+	if (subMenu == NULL) {
+		return;
+	}
+	wchar_t buffer[128] = { 0 };
+	if (::GetMenuString(subMenu, 0, buffer, 128, MF_BYPOSITION) == 0 
+		&& wcslen(buffer) == 0) {
+		::RemoveMenu(subMenu, 0, MF_BYPOSITION);
+	}
+	int count = ::GetMenuItemCount(subMenu);
+	BOOL ret = ::InsertMenu(subMenu, count, MF_BYCOMMAND | MF_STRING, ID_LANGUAGE_BASE + count, text);
+}
+
 LRESULT CMainDlg::OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
 	// unregister message filtering and idle updates
@@ -289,6 +343,9 @@ LRESULT CMainDlg::OnCommand(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOO
 	int notify_code = HIWORD(wParam);
 	int ctrl_id = LOWORD(wParam);
 	if (notify_code == 0) {
+		if (ctrl_id >= ID_LANGUAGE_BASE && ctrl_id < ID_LANGUAGE_END) {
+			return OnClickLanguageMenu(ctrl_id);
+		}
 		switch (ctrl_id) {
 		case ID_FILE_OPEN: OnMenuFileOpen(); break;
 		case ID_FILE_CLOSE: OnMenuFileClose(); break;
@@ -312,15 +369,17 @@ LRESULT CMainDlg::OnDropFiles(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, B
 	HDROP hDrop = (HDROP)wParam;
 	UINT count = ::DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0);
 	if (count > 1) {
-		MessageBox(L"不支持拖入多个文件", kMsgboxTitleTip, MB_OK | MB_ICONINFORMATION);
+		MessageBox(RES_TEXT(language::kMsgDragMuiltipleFiles), 
+			RES_TEXT(language::kTipTitle), MB_OK | MB_ICONINFORMATION);
 		return 0;
 	}
 	wchar_t file_path[MAX_PATH] = { 0 };
 	count = ::DragQueryFile(hDrop, 0, file_path, MAX_PATH);
 	if (count == 0) {
 		CString msg;
-		msg.Format(L"DragQueryFile调用失败，错误码：%u", GetLastError());
-		MessageBox(msg, kMsgboxTitleError, MB_OK | MB_ICONERROR);
+		msg.Format(L"DragQueryFile%s%u", 
+			RES_TEXT(language::kMsgCallFailed), GetLastError());
+		MessageBox(msg, RES_TEXT(language::kErrorTitle), MB_OK | MB_ICONERROR);
 		return 0;
 	}
 	OpenFile(file_path);
@@ -330,7 +389,8 @@ LRESULT CMainDlg::OnDropFiles(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, B
 BOOL CMainDlg::OpenFile(const std::wstring& pe_path)
 {
 	if (!IsPeFile(pe_path)) {
-		MessageBox(L"请打开有效的PE文件", kMsgboxTitleError, MB_OK | MB_ICONERROR);
+		MessageBox(RES_TEXT(language::kOpenInvalidFile), 
+			RES_TEXT(language::kErrorTitle), MB_OK | MB_ICONERROR);
 		return 0;
 	}
 	ClearTreeView();
@@ -430,7 +490,7 @@ void CMainDlg::InitListView()
 		memset(&lvcol, 0, sizeof(LVCOLUMN));
 		lvcol.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
 		lvcol.pszText = (LPWSTR)column_texts[i].c_str();
-		lvcol.cchTextMax = column_texts[i].size();
+		lvcol.cchTextMax = (int)column_texts[i].size();
 		lvcol.cx = column_widths[i];
 		ListView_InsertColumn(list_view_export_, i, &lvcol);
 		ListView_InsertColumn(list_view_use_, i, &lvcol);

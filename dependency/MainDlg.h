@@ -7,13 +7,11 @@
 #include <atlctrls.h>
 #include "resource.h"
 #include "AboutDlg.h"
-#include <map>
-#include <list>
 #include "utils/PEHelper.h"
-#include <memory>
+#include "ResourceDelegate.h"
 
 class CMainDlg : public CDialogImpl<CMainDlg>, public CUpdateUI<CMainDlg>,
-	public CMessageFilter, public CIdleHandler
+	public CMessageFilter, public CIdleHandler, public ResourceDelegate
 {
 public:
 	CMainDlg();
@@ -62,7 +60,6 @@ private:
 	};
 
 protected:
-
 	BOOL OpenFile(const std::wstring& pe_path);
 	void ClearTreeView();
 	void ExpendTreeItem(HTREEITEM item);
@@ -86,6 +83,10 @@ protected:
 	void OnMenuListItemCopy();
 	void OnMenuListItemFind();
 	void SetWindowTitle(const std::wstring& path);
+	LRESULT OnClickLanguageMenu(int id);
+	// callback
+	void OnSwitchLanguage() override;
+	void OnAddLanguage(const wchar_t* text) override;
 
 private:
 	BOOL PreTranslateMessage(MSG* pMsg) override;

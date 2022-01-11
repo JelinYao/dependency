@@ -28,4 +28,10 @@ extern CAppModule _Module;
   #pragma comment(linker, "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
 
+// std
 #include <string>
+#include <vector>
+#include <map>
+#include <memory>
+// tinyxml2
+#include "thirdpart/tinyxml2/tinyxml2.h"

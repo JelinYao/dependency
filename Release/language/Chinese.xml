@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<resources>
+    <string id="File">文件</string>
+    <string id="View">视图</string>
+    <string id="Language">语言</string>
+    <string id="Help">帮助</string>
+    <string id="OpenFile">打开文件(&O)</string>
+    <string id="CloseFile">关闭文件(&C)</string>
+    <string id="Exit">退出(&E)</string>
+    <string id="ExpendAll">展开所有(&E)</string>
+    <string id="CollapseAll">收拢所有(&C)</string>
+    <string id="About">关于我们(&A)</string>
+    <string id="OpenInvalidFile">请打开有效的PE文件</string>
+    <string id="TipTitle">提示</string>
+    <string id="ErrorTitle">错误</string>
+    <string id="MsgDragMuiltipleFiles">不支持拖入多个文件</string>
+    <string id="MsgCallFailed">调用失败，错误码：</string>
+</resources>

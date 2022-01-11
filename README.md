@@ -19,6 +19,9 @@ Dependency Walker在Win10上面太卡了，受不了了，自己开发一个替�
 1、解决64位pe文件加载出错的问题
 2、编译64位Dependency
 
+### 2022年1月11日   - 1.4
+1、支持多语言切换
+
 ## 程序截图
 
 ![](https://raw.githubusercontent.com/JelinYao/dependency/main/img/screen1.png)
