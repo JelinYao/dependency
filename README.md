@@ -21,7 +21,10 @@ Dependency Walker is too stuck on Windows 10 , so I developed a replacement myse
 2、编译64位Dependency
 
 ### 2022年1月11日   - 1.4
-1、支持多语言切换
+1、支持多语言切换  
+
+### 2023年1月31日   - 1.5  
+1、解决加载64位PE文件导入表显示不全的bug  
 
 ## 程序截图
 

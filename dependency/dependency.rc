@@ -113,7 +113,7 @@ CAPTION "About dependency"
 FONT 9, "Segoe UI", 0, 0, 0x0
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,130,81,50,14
-    CTEXT           "dependency Application v1.0\n\n(c) Copyright 2021",IDC_STATIC,7,66,115,29
+    CTEXT           "dependency Application v1.5\n\n(c) Copyright 2023",IDC_STATIC,7,66,115,29
     ICON            IDR_MAINFRAME,IDC_STATIC,55,26,20,20
     GROUPBOX        "",IDC_STATIC,7,7,115,88
     CONTROL         "<a>https://github.com/jelinyao</a>",IDC_SYSLINK1,
@@ -189,8 +189,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,4,0,6
- PRODUCTVERSION 1,4,0,6
+ FILEVERSION 1,5,0,7
+ PRODUCTVERSION 1,5,0,7
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -206,12 +206,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "FileDescription", "dependency Module"
-            VALUE "FileVersion", "1.4.0.6"
+            VALUE "FileVersion", "1.5.0.7"
             VALUE "InternalName", "dependency"
             VALUE "LegalCopyright", "Copyright 2021"
             VALUE "OriginalFilename", "dependency.exe"
             VALUE "ProductName", "dependency Module"
-            VALUE "ProductVersion", "1.4.0.6"
+            VALUE "ProductVersion", "1.5.0.7"
         END
     END
     BLOCK "VarFileInfo"
