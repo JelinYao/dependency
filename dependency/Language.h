@@ -17,6 +17,7 @@ namespace language {
     static CONSTEXPR char* kExpendAll = "ExpendAll";
     static CONSTEXPR char* kCollapseAll = "CollapseAll";
     static CONSTEXPR char* kAbout = "About";
+    static CONSTEXPR char* kAddToSystemMenu = "AddToSystemMenu";
     static CONSTEXPR char* kOpenInvalidFile = "OpenInvalidFile";
     static CONSTEXPR char* kTipTitle = "TipTitle";
     static CONSTEXPR char* kErrorTitle = "ErrorTitle";

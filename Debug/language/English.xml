@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<resources>
+    <string id="File">File</string>
+    <string id="View">View</string>
+    <string id="Language">Language</string>
+    <string id="Help">Help</string>
+    <string id="OpenFile">Open file(&O)</string>
+    <string id="CloseFile">Close file(&C)</string>
+    <string id="Exit">Exit(&E)</string>
+    <string id="ExpendAll">Expend all(&E)</string>
+    <string id="CollapseAll">Collapse all(&C)</string>
+    <string id="About">About(&A)</string>
+    <string id="OpenInvalidFile">Invalid windows pe file</string>
+    <string id="TipTitle">info</string>
+    <string id="ErrorTitle">error</string>
+    <string id="MsgDragMuiltipleFiles">Drag multiple files is not supported</string>
+    <string id="MsgCallFailed">execute failed，error code: </string>
+    <string id="AddToSystemMenu">add to system menu</string>
+</resources>

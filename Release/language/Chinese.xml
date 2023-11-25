@@ -15,4 +15,5 @@
     <string id="ErrorTitle">错误</string>
     <string id="MsgDragMuiltipleFiles">不支持拖入多个文件</string>
     <string id="MsgCallFailed">调用失败，错误码：</string>
+    <string id="AddToSystemMenu">添加到系统右键菜单</string>
 </resources>

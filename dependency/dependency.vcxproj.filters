@@ -48,6 +48,9 @@
     <ClCompile Include="LanguageMgr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RegUtils.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -85,6 +88,9 @@
     </ClInclude>
     <ClInclude Include="MenuDefine.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RegUtils.h">
+      <Filter>utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

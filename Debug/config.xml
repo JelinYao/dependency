@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<config>
+    <language selected="0">
+        <item text="中文-简体">Chinese</item>
+        <item text="English">English</item>
+    </language>
+</config>

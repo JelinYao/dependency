@@ -8,6 +8,7 @@
 #include "ResourceMgr.h"
 #include "Language.h"
 #include "MenuDefine.h"
+#include "RegUtils.h"
 
 #ifdef _WIN64
 constexpr wchar_t kDefaultWindowText[] = L"dependency64";
@@ -49,6 +50,10 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
     HICON hIconSmall = AtlLoadIconImage(IDR_MAINFRAME, LR_DEFAULTCOLOR, ::GetSystemMetrics(SM_CXSMICON), ::GetSystemMetrics(SM_CYSMICON));
     SetIcon(hIconSmall, FALSE);
 
+    hAccel = AtlLoadAccelerators(IDR_MAINFRAME);
+
+    ::SetWindowText(m_hWnd, kDefaultWindowText);
+
     // register object for message filtering and idle updates
     CMessageLoop* pLoop = _Module.GetMessageLoop();
     ATLASSERT(pLoop != NULL);
@@ -59,6 +64,7 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
     left_spliter_cursor = ::LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZEWE));
     right_spliter_cursor = ::LoadCursor(NULL, MAKEINTRESOURCE(IDC_SIZENS));
     tree_view_ = ::GetDlgItem(m_hWnd, IDC_TREE1);
+    hwnd_dep_path_ = ::GetDlgItem(m_hWnd, IDC_STATIC_PATH);
     list_view_export_ = ::GetDlgItem(m_hWnd, IDC_LIST1);
     list_view_use_ = ::GetDlgItem(m_hWnd, IDC_LIST2);
     list_view_ctrl_export_ = std::make_unique<CListViewCtrl>(list_view_export_);
@@ -68,11 +74,16 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
     ::DragAcceptFiles(m_hWnd, TRUE);
     RECT rc;
     ::GetClientRect(m_hWnd, &rc);
-    left_spliter_xpos_ = int((rc.right - rc.left) * 0.3);
-    right_spliter_ypos = int((rc.bottom - rc.top) * 0.24);
+    left_spliter_xpos_ = int((rc.right - rc.left)*0.3);
+    right_spliter_ypos = int((rc.bottom - rc.top)*0.24);
     // init resource
     ResourceMgr::Instance()->Init(this);
-    SetWindowTitle(L"");
+
+    if (__argc > 1) {
+        std::wstring file = __wargv[1];
+        OpenFile(file);
+    }
+
     return TRUE;
 }
 
@@ -206,6 +217,45 @@ void CMainDlg::OnMenuAbout()
     dlg.DoModal();
 }
 
+void CMainDlg::OnAddRightMenuContext()
+{
+    HKEY hKey = 0;
+    CString str0 = _T("");
+    // comfile/cplfile/drvfile/srcfile/sysfile
+    TCHAR* arr[] = { _T("exefile") ,
+        _T("dllfile"),
+        _T("ocxfile"),
+        _T("comfile"),
+        _T("sysfile"),
+        nullptr,
+    };
+    int pos = 0;
+    TCHAR szMod[MAX_PATH] = { 0 };
+    ::GetModuleFileName(nullptr, szMod, MAX_PATH);
+    CString strValue = szMod;
+    strValue += _T(" %1");
+
+    BOOL bWow64 = FALSE;
+    BOOL bRet = ::IsWow64Process(::GetCurrentProcess(), &bWow64);
+
+    while (true) {
+        if (!arr[pos]) break;
+        CString str;
+        if (bWow64) {
+            str.Format(_T("HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies\\"), arr[pos]);
+        }
+        else {
+            str.Format(_T("HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies(x64)\\"), arr[pos]);
+        }
+        CRegUtils::SplitKey(str, hKey, str0);
+        CRegUtils::CreateKey(hKey, str0);
+        str0 += _T("\\command");
+        CRegUtils::CreateKey(hKey, str0);
+        CRegUtils::SetString(hKey, str0, _T(""), strValue);
+        ++pos;
+    }
+}
+
 void ExpendAllItem(HWND tree_view, HTREEITEM item, UINT code) {
     if (item == NULL) {
         return;
@@ -235,9 +285,17 @@ void CMainDlg::OnMenuCollapseAll()
 
 void CMainDlg::OnMenuListItemCopy()
 {
-    int select_index = (int)::SendMessage(list_view_export_, LVM_GETNEXTITEM, (WPARAM)-1, MAKELPARAM(LVNI_ALL | LVNI_SELECTED, 0));
     CString item_text;
-    list_view_ctrl_export_->GetItemText(select_index, 2, item_text.GetBufferSetLength(128), 128);
+    int pos = (int)::SendMessage(list_view_export_, LVM_GETNEXTITEM, (WPARAM)-1, MAKELPARAM(LVNI_ALL | LVNI_SELECTED, 0));
+    while (pos >= 0) {
+        CString item;
+        list_view_ctrl_export_->GetItemText(pos, 2, item.GetBufferSetLength(128), 128);
+        if (!item.IsEmpty()) {
+            item_text += item;
+            item_text += _T("\n");
+        }
+        pos = (int)::SendMessage(list_view_export_, LVM_GETNEXTITEM, (WPARAM)pos, MAKELPARAM(LVNI_ALL | LVNI_SELECTED, 0));
+    }
     if (!item_text.IsEmpty()) {
         CopyToClipbord(item_text.GetBuffer());
     }
@@ -291,6 +349,10 @@ void CMainDlg::OnSwitchLanguage()
         HMENU subMenu = ::GetSubMenu(menu, i);
         char** key = (char**)(kSubMenus[i].array);
         for (int j = 0; j < kSubMenus[i].count; ++j) {
+            if (!key[j]) {
+                // 遇到分隔符菜单项，直接跳过
+                continue;
+            }
             auto text = ResourceMgr::Instance()->GetText(key[j]);
             if (text) {
                 UINT id = ::GetMenuItemID(subMenu, j);
@@ -334,11 +396,16 @@ LRESULT CMainDlg::OnSize(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bH
     if (wParam != SIZE_MINIMIZED) {
         auto width = GET_X_LPARAM(lParam);
         auto height = GET_Y_LPARAM(lParam);
+        height -= 20;
 
         ::MoveWindow(tree_view_, 0, 0, left_spliter_xpos_ - 1, height, TRUE);
         ::MoveWindow(list_view_use_, left_spliter_xpos_ + 1, 0, width - left_spliter_xpos_ - 1, right_spliter_ypos - 1, TRUE);
         ::MoveWindow(list_view_export_, left_spliter_xpos_ + 1, right_spliter_ypos + 1,
             width - left_spliter_xpos_ - 1, height - right_spliter_ypos - 1, TRUE);
+
+        RECT rcWnd;
+        ::GetClientRect(hwnd_dep_path_, &rcWnd);
+        ::MoveWindow(hwnd_dep_path_, 0, height - rcWnd.bottom + rcWnd.top + 20, width, rcWnd.bottom - rcWnd.top, TRUE);
     }
     return 0;
 }
@@ -356,10 +423,15 @@ LRESULT CMainDlg::OnCommand(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOO
         case ID_FILE_CLOSE: OnMenuFileClose(); break;
         case ID_FILE_EXIT: OnMenuExit(); break;
         case ID_HELP_ABOUT: OnMenuAbout(); break;
+        case ID_ADD_DEFAULT_MENU: OnAddRightMenuContext(); break;
         case ID_VIEW_EXPEND: OnMenuExpendAll(); break;
         case ID_VIEW_COLLAPSE: OnMenuCollapseAll(); break;
         case ID_LISTITEM_COPY: OnMenuListItemCopy(); break;
         case ID_LISTITEM_FIND: OnMenuListItemFind(); break;
+        case ID_LISTITEM_COPY_ALL: {
+            list_view_ctrl_export_->SelectAllItems();
+            OnMenuListItemCopy();
+        }break;
         default:
             break;
         }
@@ -406,7 +478,6 @@ BOOL CMainDlg::OpenFile(const std::wstring& pe_path)
     is_x64_archite_ = pe.IsX64Archite();
     std::list<IMAGE_IMPORT_DLL> dll_list;
     bool success = is_x64_archite_ ? pe.GetImportDllsX64(dll_list) : pe.GetImportDlls(dll_list);
-
     tree_root_item_ = AddTreeItem(TVI_ROOT, TVI_FIRST, file_name.c_str());
     TREEITEM_DATA item_data;
     item_data.item_text = std::move(file_name);
@@ -453,14 +524,15 @@ void CMainDlg::ExpendTreeItem(HTREEITEM item)
     find_itor->second.read_flag = TRUE;
     std::wstring pe_path;
     if (!SearchDllPath(is_x64_archite_, current_pe_dir_, find_itor->second.item_text, pe_path)) {
+        ::SetWindowText(hwnd_dep_path_, _T(""));
         // 没有搜索到
         return;
     }
+    ::SetWindowText(hwnd_dep_path_, pe_path.c_str());
     PEHelper pe(pe_path);
     std::list<IMAGE_IMPORT_DLL> dll_list;
     TREEITEM_DATA item_data;
     bool success = is_x64_archite_ ? pe.GetImportDllsX64(dll_list) : pe.GetImportDlls(dll_list);
-
     if (success) {
         HTREEITEM prev_item = TVI_FIRST;
         for (auto itor = dll_list.begin(); itor != dll_list.end(); ++itor) {
@@ -543,6 +615,7 @@ LRESULT CMainDlg::OnNMRclickList1(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL& /*bHandl
 
 BOOL CMainDlg::PreTranslateMessage(MSG* pMsg)
 {
+    ::TranslateAccelerator(m_hWnd, hAccel, pMsg);
     if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_F5) {
         if (!current_pe_path_.empty()) {
             auto pe_path = current_pe_path_;
