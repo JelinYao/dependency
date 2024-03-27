@@ -35,13 +35,15 @@
 #define ID_ADD_DEFAULT_MENU             32794
 #define ID_LISTITEM_COPY_ALL            32795
 #define ID_LISTCTRL_SELECTALL           32796
+#define ID_32798                        32798
+#define ID_DEL_DEFAULT_MENU             32799
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        204
-#define _APS_NEXT_COMMAND_VALUE         32798
+#define _APS_NEXT_COMMAND_VALUE         32800
 #define _APS_NEXT_CONTROL_VALUE         1008
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
