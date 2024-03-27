@@ -232,8 +232,8 @@ void CMainDlg::OnAddRightMenuContext()
     int pos = 0;
     TCHAR szMod[MAX_PATH] = { 0 };
     ::GetModuleFileName(nullptr, szMod, MAX_PATH);
-    CString strValue = szMod;
-    strValue += _T(" %1");
+    CString strValue = szMod, strExe(szMod);
+    strValue += _T(" \"%1\"");
 
     BOOL bWow64 = FALSE;
     BOOL bRet = ::IsWow64Process(::GetCurrentProcess(), &bWow64);
@@ -242,17 +242,47 @@ void CMainDlg::OnAddRightMenuContext()
         if (!arr[pos]) break;
         CString str;
         if (bWow64) {
-            str.Format(_T("HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies\\"), arr[pos]);
+            str.Format(_T("HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies"), arr[pos]);
         }
         else {
-            str.Format(_T("HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies(x64)\\"), arr[pos]);
+            str.Format(_T("HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies(x64)"), arr[pos]);
         }
         CRegUtils::SplitKey(str, hKey, str0);
         CRegUtils::CreateKey(hKey, str0);
-        str0 += _T("\\command");
-        CRegUtils::CreateKey(hKey, str0);
-        CRegUtils::SetString(hKey, str0, _T(""), strValue);
+        CString strCmd(str0 + _T("\\command"));
+        CRegUtils::CreateKey(hKey, strCmd);
+        CRegUtils::SetString(hKey, strCmd, _T(""), strValue);
+        CRegUtils::SetString(hKey, str0, _T("Icon"), strExe);
         ++pos;
+    }
+}
+
+void CMainDlg::OnDelRightMenuContext()
+{
+    HKEY hKey = 0;
+    CString str0 = _T("");
+    // comfile/cplfile/drvfile/srcfile/sysfile
+    TCHAR* arr[] = { _T("exefile") ,
+       _T("dllfile"),
+       _T("ocxfile"),
+       _T("comfile"),
+       _T("sysfile"),
+       nullptr,
+    };
+    BOOL bWow64 = FALSE;
+    ::IsWow64Process(::GetCurrentProcess(), &bWow64);
+    for (TCHAR* pszfile : arr)
+    {
+        if (!pszfile) break;
+        CString str;
+        if (bWow64) {
+            str.Format(_T("HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies"), pszfile);
+        }
+        else {
+            str.Format(_T("HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies(x64)"), pszfile);
+        }
+        CRegUtils::SplitKey(str, hKey, str0);
+        CRegUtils::DelKey(hKey, str0);
     }
 }
 
@@ -424,6 +454,7 @@ LRESULT CMainDlg::OnCommand(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOO
         case ID_FILE_EXIT: OnMenuExit(); break;
         case ID_HELP_ABOUT: OnMenuAbout(); break;
         case ID_ADD_DEFAULT_MENU: OnAddRightMenuContext(); break;
+        case ID_DEL_DEFAULT_MENU: OnDelRightMenuContext(); break;
         case ID_VIEW_EXPEND: OnMenuExpendAll(); break;
         case ID_VIEW_COLLAPSE: OnMenuCollapseAll(); break;
         case ID_LISTITEM_COPY: OnMenuListItemCopy(); break;
