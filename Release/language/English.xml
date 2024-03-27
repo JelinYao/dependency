@@ -16,4 +16,5 @@
     <string id="MsgDragMuiltipleFiles">Drag multiple files is not supported</string>
     <string id="MsgCallFailed">execute failed，error code: </string>
     <string id="AddToSystemMenu">add to system menu</string>
+    <string id="DelToSystemMenu">delete system menu</string>
 </resources>

@@ -80,6 +80,7 @@ protected:
     void OnMenuExit();
     void OnMenuAbout();
     void OnAddRightMenuContext();
+    void OnDelRightMenuContext();
     void OnMenuExpendAll();
     void OnMenuCollapseAll();
 
