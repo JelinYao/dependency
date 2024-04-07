@@ -195,8 +195,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,6,0,0
- PRODUCTVERSION 1,6,0,0
+ FILEVERSION 1,7,0,0
+ PRODUCTVERSION 1,7,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -212,12 +212,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "FileDescription", "dependency Module"
-            VALUE "FileVersion", "1.6.0.0"
+            VALUE "FileVersion", "1.7.0.0"
             VALUE "InternalName", "dependency"
             VALUE "LegalCopyright", "Copyright 2021"
             VALUE "OriginalFilename", "dependency.exe"
             VALUE "ProductName", "dependency Module"
-            VALUE "ProductVersion", "1.6.0.0"
+            VALUE "ProductVersion", "1.7.0.0"
         END
     END
     BLOCK "VarFileInfo"

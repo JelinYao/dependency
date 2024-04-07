@@ -184,13 +184,13 @@ void CMainDlg::AddUseFunctions(const std::list<IMAGE_EXPORT_FUNCTION>& function_
 void CMainDlg::OnMenuFileOpen()
 {
     OPENFILENAME ofn = { 0 };
-    TCHAR szFile[MAX_PATH] = { 0 };
+    wchar_t szFile[MAX_PATH] = { 0 };
     ofn.lStructSize = sizeof(OPENFILENAME);
     ofn.hwndOwner = m_hWnd;
     ofn.lpstrFile = szFile;
     ofn.lpstrFile[0] = '\0';
     ofn.nMaxFile = sizeof(szFile) / sizeof(szFile[0]);
-    ofn.lpstrFilter = _T("可执行文件(*.exe)\0*.exe\0dll文件(*.dll)\0*.dll\0所有文件(*.*)\0*.*\0\0");
+    ofn.lpstrFilter = L"可执行文件(*.exe)\0*.exe\0dll文件(*.dll)\0*.dll\0所有文件(*.*)\0*.*\0\0";
     ofn.nFilterIndex = 1;
     ofn.lpstrFileTitle = NULL;
     ofn.nMaxFileTitle = 0;
@@ -220,67 +220,57 @@ void CMainDlg::OnMenuAbout()
 void CMainDlg::OnAddRightMenuContext()
 {
     HKEY hKey = 0;
-    CString str0 = _T("");
+    CString str0;
     // comfile/cplfile/drvfile/srcfile/sysfile
-    TCHAR* arr[] = { _T("exefile") ,
-        _T("dllfile"),
-        _T("ocxfile"),
-        _T("comfile"),
-        _T("sysfile"),
-        nullptr,
+    TCHAR* arr[] = { 
+        L"exefile",
+        L"dllfile",
+        L"ocxfile",
+        L"comfile",
+        L"sysfile",
     };
-    int pos = 0;
     TCHAR szMod[MAX_PATH] = { 0 };
     ::GetModuleFileName(nullptr, szMod, MAX_PATH);
     CString strValue = szMod, strExe(szMod);
-    strValue += _T(" \"%1\"");
+    strValue += L" \"%1\"";
 
-    BOOL bWow64 = FALSE;
-    BOOL bRet = ::IsWow64Process(::GetCurrentProcess(), &bWow64);
-
-    while (true) {
-        if (!arr[pos]) break;
+    for (auto pszfile : arr) {
         CString str;
-        if (bWow64) {
-            str.Format(_T("HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies"), arr[pos]);
-        }
-        else {
-            str.Format(_T("HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies(x64)"), arr[pos]);
-        }
+#ifdef _WIN64
+        str.Format(L"HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies(x64)", pszfile);
+#else
+        str.Format(L"HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies", pszfile);
+#endif
         CRegUtils::SplitKey(str, hKey, str0);
         CRegUtils::CreateKey(hKey, str0);
-        CString strCmd(str0 + _T("\\command"));
+        CString strCmd(str0 + L"\\command");
         CRegUtils::CreateKey(hKey, strCmd);
-        CRegUtils::SetString(hKey, strCmd, _T(""), strValue);
-        CRegUtils::SetString(hKey, str0, _T("Icon"), strExe);
-        ++pos;
+        CRegUtils::SetString(hKey, strCmd, L"", strValue);
+        CRegUtils::SetString(hKey, str0, L"Icon", strExe);
     }
 }
 
 void CMainDlg::OnDelRightMenuContext()
 {
     HKEY hKey = 0;
-    CString str0 = _T("");
+    CString str0;
     // comfile/cplfile/drvfile/srcfile/sysfile
-    TCHAR* arr[] = { _T("exefile") ,
-       _T("dllfile"),
-       _T("ocxfile"),
-       _T("comfile"),
-       _T("sysfile"),
-       nullptr,
+    TCHAR* arr[] = { 
+       L"exefile" ,
+       L"dllfile",
+       L"ocxfile",
+       L"comfile",
+       L"sysfile",
     };
-    BOOL bWow64 = FALSE;
-    ::IsWow64Process(::GetCurrentProcess(), &bWow64);
-    for (TCHAR* pszfile : arr)
-    {
-        if (!pszfile) break;
+
+    // 需要管理员权限才能删除
+    for (auto pszfile : arr) {
         CString str;
-        if (bWow64) {
-            str.Format(_T("HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies"), pszfile);
-        }
-        else {
-            str.Format(_T("HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies(x64)"), pszfile);
-        }
+#ifdef _WIN64
+        str.Format(L"HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies(x64)", pszfile);
+#else
+        str.Format(L"HKEY_CLASSES_ROOT\\%s\\shell\\View Dependencies", pszfile);
+#endif
         CRegUtils::SplitKey(str, hKey, str0);
         CRegUtils::DelKey(hKey, str0);
     }
@@ -322,7 +312,7 @@ void CMainDlg::OnMenuListItemCopy()
         list_view_ctrl_export_->GetItemText(pos, 2, item.GetBufferSetLength(128), 128);
         if (!item.IsEmpty()) {
             item_text += item;
-            item_text += _T("\n");
+            item_text += L"\n";
         }
         pos = (int)::SendMessage(list_view_export_, LVM_GETNEXTITEM, (WPARAM)pos, MAKELPARAM(LVNI_ALL | LVNI_SELECTED, 0));
     }
@@ -555,7 +545,7 @@ void CMainDlg::ExpendTreeItem(HTREEITEM item)
     find_itor->second.read_flag = TRUE;
     std::wstring pe_path;
     if (!SearchDllPath(is_x64_archite_, current_pe_dir_, find_itor->second.item_text, pe_path)) {
-        ::SetWindowText(hwnd_dep_path_, _T(""));
+        ::SetWindowText(hwnd_dep_path_, L"");
         // 没有搜索到
         return;
     }

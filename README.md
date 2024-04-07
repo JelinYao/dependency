@@ -3,6 +3,11 @@ Dependency Walker在Win10上面太卡了，受不了了，自己开发一个替�
 Dependency Walker is too stuck on Windows 10 , so I developed a replacement myself.
 
 ## 更新记录 
+### 2024-4-7   - 1.7  
+1、修复添加到系统右键菜单打开文件的bug（感谢xiaokaixuan）  
+2、增加右键菜单Icon，增加删除右键菜单（感谢xiaokaixuan）  
+3、程序增加管理员权限  
+
 ### 2023-11-25   - 1.6  
 1、增加添加到系统右键菜单（由xuxian02092213实现，感谢支持）  
 
