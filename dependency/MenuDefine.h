@@ -25,6 +25,7 @@ static CONSTEXPR int kViewMenuCount = _countof(kViewMenuList);
 // help menu
 static CONSTEXPR char* kHelpMenuList[] = {
     language::kAddToSystemMenu,
+    language::kDelToSystemMenu,
     nullptr,
     language::kAbout,
 };

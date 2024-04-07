@@ -44,6 +44,7 @@ BEGIN
     POPUP "帮助"
     BEGIN
         MENUITEM "添加到右键菜单",                     ID_ADD_DEFAULT_MENU
+        MENUITEM "删除右键菜单",                      ID_DEL_DEFAULT_MENU
         MENUITEM SEPARATOR
         MENUITEM "关于我们(&A)",                    ID_HELP_ABOUT
     END
